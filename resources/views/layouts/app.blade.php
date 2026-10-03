@@ -114,12 +114,22 @@
     <img src="/icons/arrow-up.svg" alt="" class="h-4 w-4">
 </button>
 
+@php
+    $siteDescription = \App\Models\Setting::get('site_description') ?: 'گالری کاتالیا در سال ۱۴۰۲ فعالیت خودش رو در حوزه فروش زیورآلات طلا شروع کرده.';
+    $footerCopyright = \App\Models\Setting::get('footer_copyright') ?: '© ۱۴۰۵ کاتالیا | تمامی حقوق مادی و معنوی این وب‌سایت محفوظ است.';
+    $whatsappNumber = preg_replace('/\D+/', '', (string) \App\Models\Setting::get('whatsapp_number'));
+    $socialLinks = array_filter([
+        'instagram' => \App\Models\Setting::get('instagram_url'),
+        'whatsapp' => $whatsappNumber ? 'https://wa.me/'.preg_replace('/^0/', '98', $whatsappNumber) : null,
+        'sms' => \App\Models\Setting::get('contact_email') ? 'mailto:'.\App\Models\Setting::get('contact_email') : null,
+    ]);
+@endphp
 <footer class="mt-16 border-t border-[#e5e7eb] bg-white">
     <div class="px-6 pb-24 pt-10 md:px-20 md:pb-5">
         <div class="flex flex-col items-center gap-8 md:flex-row md:gap-16">
             <div class="flex flex-1 flex-col items-center gap-3 text-center md:items-start md:text-right">
                 <x-cattalya-logo size="sm" />
-                <p class="max-w-sm text-sm leading-7 text-[#6b6154]">گالری کاتالیا در سال ۱۴۰۲ فعالیت خودش رو در حوزه فروش زیورآلات طلا شروع کرده.</p>
+                <p class="max-w-sm text-sm leading-7 text-[#6b6154]">{{ $siteDescription }}</p>
             </div>
             <span class="hidden h-16 w-px bg-[#f0e6c8] md:block"></span>
             <div class="flex flex-1 flex-col items-center gap-4">
@@ -135,13 +145,15 @@
             <div class="flex flex-1 flex-col items-center gap-3 md:items-end">
                 <p class="text-xs text-[#a8a096]">راه‌های ارتباطی</p>
                 <div class="flex gap-3">
-                    @foreach(['instagram', 'whatsapp', 'sms'] as $social)
-                        <a href="#" class="press flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]"><img src="/icons/{{ $social }}.svg" alt="" class="h-5 w-5"></a>
-                    @endforeach
+                    @forelse($socialLinks as $social => $url)
+                        <a href="{{ $url }}" target="_blank" rel="noopener" aria-label="{{ $social }}" class="press flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]"><img src="/icons/{{ $social }}.svg" alt="" class="h-5 w-5"></a>
+                    @empty
+                        <a href="{{ route('contact') }}" aria-label="تماس با ما" class="press flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]"><img src="/icons/sms.svg" alt="" class="h-5 w-5"></a>
+                    @endforelse
                 </div>
             </div>
         </div>
-        <div class="mt-8 border-t border-[#ede6d3] pt-5 text-center text-xs md:text-right">© ۱۴۰۵ لوکس جواهر تمامی حقوق مادی و معنوی این وب‌سایت محفوظ است.</div>
+        <div class="mt-8 border-t border-[#ede6d3] pt-5 text-center text-xs md:text-right">{{ $footerCopyright }}</div>
     </div>
 </footer>
 

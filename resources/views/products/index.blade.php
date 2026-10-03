@@ -5,10 +5,10 @@
 @section('content')
 @php
     $sortOptions = [
-        'all' => 'همه محصولات',
+        'all' => 'همه',
         'newest' => 'جدیدترین‌ها',
-        'price_asc' => 'ارزان‌ترین‌ها',
         'price_desc' => 'گران‌ترین‌ها',
+        'price_asc' => 'ارزان‌ترین‌ها',
     ];
     $sortQuery = request()->except(['page', 'sort']);
 @endphp

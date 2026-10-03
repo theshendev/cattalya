@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller
@@ -13,7 +14,7 @@ class ContactController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:200'],
@@ -26,6 +27,8 @@ class ContactController extends Controller
             'email.email' => 'فرمت ایمیل صحیح نیست.',
             'phone.required' => 'لطفاً شماره تماس خود را وارد کنید.',
         ]);
+
+        ContactMessage::create($data);
 
         return redirect()->route('contact')->with('success', 'پیام شما با موفقیت ثبت شد. به زودی با شما تماس می‌گیریم.');
     }

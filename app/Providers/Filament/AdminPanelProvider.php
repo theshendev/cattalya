@@ -6,6 +6,8 @@ use App\Filament\Pages\ManageSettings;
 use App\Filament\Resources\AnnouncementResource;
 use App\Filament\Resources\BannerResource;
 use App\Filament\Resources\CategoryResource;
+use App\Filament\Resources\ContactMessageResource;
+use App\Filament\Resources\CouponResource;
 use App\Filament\Resources\GoldPriceResource;
 use App\Filament\Resources\OrderResource;
 use App\Filament\Resources\ProductResource;
@@ -49,6 +51,8 @@ class AdminPanelProvider extends PanelProvider
                 OrderResource::class,
                 GoldPriceResource::class,
                 AnnouncementResource::class,
+                CouponResource::class,
+                ContactMessageResource::class,
             ])
             ->pages([
                 Pages\Dashboard::class,
