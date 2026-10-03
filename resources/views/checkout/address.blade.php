@@ -89,8 +89,8 @@
 <dialog id="address-dialog" class="m-auto w-[calc(100%-2rem)] max-w-[436px] rounded-3xl p-0 backdrop:bg-black/45">
     <div class="p-5 md:p-6">
         <div class="flex items-center justify-between">
-            <button type="button" data-close-dialog class="flex size-8 items-center justify-center rounded-full border border-[#2b2620]" aria-label="بستن">×</button>
             <h2 id="address-dialog-title" class="text-lg font-bold text-[#2b2620]">آدرس جدید</h2>
+            <button type="button" data-close-dialog class="flex size-8 items-center justify-center rounded-full border border-[#2b2620]" aria-label="بستن">×</button>
         </div>
 
         <form id="address-form" method="POST" action="{{ route('addresses.store') }}" class="mt-5 grid grid-cols-2 gap-3">

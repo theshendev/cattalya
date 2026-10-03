@@ -23,11 +23,16 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
-// Auth (OTP)
+// Auth: password login, or a one-time code that also registers new users
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login/otp', [AuthController::class, 'sendOtp'])->name('login.otp');
-    Route::post('/login/verify', [AuthController::class, 'verifyOtp'])->name('login.verify');
+    Route::post('/login', [AuthController::class, 'attemptLogin'])->name('login.attempt');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/otp/send', [AuthController::class, 'sendOtp'])->name('otp.send');
+    Route::get('/otp/verify', [AuthController::class, 'showVerify'])->name('otp.show');
+    Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])->name('otp.verify');
+    Route::get('/register/complete', [AuthController::class, 'showComplete'])->name('register.complete');
+    Route::post('/register/complete', [AuthController::class, 'completeRegistration'])->name('register.store');
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
@@ -42,7 +47,11 @@ Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->na
 Route::middleware('auth')->group(function () {
     // Account
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/identity', [ProfileController::class, 'updateIdentity'])->name('profile.identity');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::patch('/profile/email', [ProfileController::class, 'updateEmail'])->name('profile.email');
+    Route::post('/profile/phone/otp', [ProfileController::class, 'sendPhoneOtp'])->name('profile.phone.otp');
+    Route::post('/profile/phone/verify', [ProfileController::class, 'verifyPhone'])->name('profile.phone.verify');
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('/wishlist/{product}', [WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');

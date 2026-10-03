@@ -17,7 +17,7 @@ class User extends Authenticatable implements FilamentUser
     use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
-        'name', 'last_name', 'email', 'password', 'phone', 'national_id', 'birth_date', 'is_admin',
+        'name', 'last_name', 'email', 'password', 'password_set_at', 'phone', 'national_id', 'birth_date', 'is_admin',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -26,10 +26,21 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'password_set_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'birth_date' => 'date',
         ];
+    }
+
+    public function fullName(): string
+    {
+        return trim($this->name.' '.$this->last_name);
+    }
+
+    public function hasPassword(): bool
+    {
+        return $this->password_set_at !== null;
     }
 
     public function canAccessPanel(Panel $panel): bool

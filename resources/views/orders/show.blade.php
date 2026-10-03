@@ -21,7 +21,7 @@ $st = $statusMap[$order->status] ?? ['label' => $order->status, 'color' => 'text
         <span class="text-xs md:text-sm font-medium px-3 md:px-4 py-1.5 md:py-2 rounded-full border {{ $st['color'] }} {{ $order->status === 'pending' ? 'animate-pulse' : '' }}">{{ $st['label'] }}</span>
         <div class="text-right">
             <h1 class="text-xl md:text-2xl font-bold text-[#2b2620]">سفارش #{{ $order->id }}</h1>
-            <p class="text-xs md:text-sm text-[#a8a096] mt-1">{{ $order->created_at->format('Y/m/d H:i') }}</p>
+            <p class="text-xs md:text-sm text-[#a8a096] mt-1">{{ \App\Support\Jalali::formatLong($order->created_at) }} — {{ $order->created_at->format('H:i') }}</p>
         </div>
     </div>
 
