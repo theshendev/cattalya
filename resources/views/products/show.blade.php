@@ -117,6 +117,15 @@
                     </div>
                     @endforeach
                 </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-[#f0e6c8] pt-5 lg:hidden">
+                    <p class="text-sm text-[#a8a096]">با ما در تماس باشید.</p>
+                    <div class="flex items-center gap-3">
+                        @foreach(['sms', 'whatsapp', 'instagram'] as $icon)
+                        <span class="flex size-10 items-center justify-center rounded-full border border-[#e3d2a0] bg-white"><img src="/icons/{{ $icon }}.svg" alt="" class="size-5"></span>
+                        @endforeach
+                    </div>
+                </div>
             </section>
 
             {{-- Details --}}
@@ -151,7 +160,7 @@
         </div>
 
         {{-- Invoice sidebar --}}
-        <aside data-reveal class="rounded-3xl border border-[#f0e6c8] bg-white p-5 lg:sticky lg:top-6">
+        <aside data-reveal class="hidden rounded-3xl border border-[#f0e6c8] bg-white p-5 lg:sticky lg:top-6 lg:block">
             <h2 class="text-right text-sm text-[#a8a096]">فاکتور خرید</h2>
 
             <dl class="mt-4 flex flex-col text-sm">
@@ -218,6 +227,25 @@
             </div>
         </aside>
     </div>
+</div>
+
+{{-- Mobile purchase bar --}}
+<div class="fixed inset-x-0 bottom-16 z-30 border-t border-[#f0e6c8] bg-white px-4 pb-3 pt-3 shadow-[0_-8px_24px_rgb(0_0_0_/_0.06)] lg:hidden">
+    <div class="mb-2 flex items-center justify-between">
+        <span class="text-xs text-[#a8a096]">قیمت نهایی:</span>
+        <span class="text-lg font-bold text-[#2b2620]">{{ number_format($product->calculatePrice()) }} <span class="text-sm font-normal">تومان</span></span>
+    </div>
+    @if($isInStock)
+    <form method="POST" action="{{ route('cart.add', $product) }}">
+        @csrf
+        <button type="submit" class="press flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#111] font-medium text-white">
+            <img src="/icons/cart.svg" alt="" class="size-5 invert">
+            افزودن به سبد خرید
+        </button>
+    </form>
+    @else
+    <div class="flex h-12 w-full items-center justify-center rounded-2xl bg-[#f0e6c8] font-medium text-[#a8a096]">ناموجود</div>
+    @endif
 </div>
 
 <script>

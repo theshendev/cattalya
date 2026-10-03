@@ -106,7 +106,7 @@
     })();
 </script>
 
-<main class="page-enter pb-20 md:pb-0">
+<main class="page-enter {{ request()->routeIs('products.show') ? 'pb-48 lg:pb-0' : 'pb-20 md:pb-0' }}">
     @yield('content')
 </main>
 

@@ -21,13 +21,13 @@
     </nav>
 
     <div class="mb-5 grid grid-cols-2 gap-2 md:hidden">
-        <button type="button" data-open-product-sheet="filters" class="press flex h-12 items-center justify-center gap-3 rounded-2xl border border-[#dfc47d] bg-white text-sm text-[#2b2620]">
-            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 4h18l-7 8v6l-4 2v-8L3 4Z"/></svg>
-            فیلترها
-        </button>
         <button type="button" data-open-product-sheet="sort" class="press flex h-12 items-center justify-center gap-3 rounded-2xl border border-[#dfc47d] bg-white text-sm text-[#2b2620]">
             <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.7" d="M4 7h16M7 12h10m-7 5h4"/></svg>
             مرتب‌سازی براساس
+        </button>
+        <button type="button" data-open-product-sheet="filters" class="press flex h-12 items-center justify-center gap-3 rounded-2xl border border-[#dfc47d] bg-white text-sm text-[#2b2620]">
+            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 4h18l-7 8v6l-4 2v-8L3 4Z"/></svg>
+            فیلترها
         </button>
     </div>
 
