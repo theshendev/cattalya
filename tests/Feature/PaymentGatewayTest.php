@@ -110,7 +110,7 @@ class PaymentGatewayTest extends TestCase
         $this->get(route('payment.callback', [
             'gateway' => 'zarinpal', 'ref' => $payment->reference,
             'Authority' => 'AUTH123', 'Status' => 'OK',
-        ]))->assertRedirect(route('orders.show', $this->order->id));
+        ]))->assertRedirect(route('orders.result', $this->order->id));
 
         $payment->refresh();
         $this->assertTrue($payment->isPaid());

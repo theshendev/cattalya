@@ -24,4 +24,15 @@ class OrderController extends Controller
 
         return view('orders.show', compact('order'));
     }
+
+    /**
+     * Landing page after the gateway: success or "try again".
+     */
+    public function result(Order $order)
+    {
+        abort_unless($order->user_id === Auth::id(), 403);
+        $order->load('latestPayment');
+
+        return view('orders.result', compact('order'));
+    }
 }

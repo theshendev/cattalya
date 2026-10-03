@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Address;
+use App\Models\Coupon;
 use App\Models\GoldPrice;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\CartService;
+use App\Services\CheckoutService;
 use App\Services\Payment\PaymentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -16,68 +19,139 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private CartService $cart,
+        private CheckoutService $checkout,
         private PaymentService $payments,
     ) {}
 
-    public function index()
+    /**
+     * Step 2: choose the delivery address.
+     */
+    public function index(Request $request)
     {
         if ($this->cart->items()->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'سبد خرید شما خالی است.');
         }
 
-        return view('checkout.index', [
-            'items' => $this->cart->itemsWithPrices(),
-            'total' => $this->cart->total(),
-            'user' => Auth::user(),
-            // Only gateways that are enabled and hold credentials.
-            'gateways' => $this->payments->gatewayOptions(),
+        $user = $request->user();
+
+        return view('checkout.address', [
+            'addresses' => $user->addresses()->orderByDesc('is_default')->latest()->get(),
+            'selectedAddress' => $this->checkout->selectedAddress($user),
+            'notes' => $this->checkout->notes(),
+            'quote' => $this->checkout->quote(),
         ]);
     }
 
-    public function store(Request $request)
+    public function selectAddress(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'address_id' => ['required', 'integer'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ], [
+            'address_id.required' => 'لطفاً یک آدرس انتخاب کنید.',
+        ]);
+
+        $address = $request->user()->addresses()->find($data['address_id']);
+
+        if (! $address) {
+            return back()->withErrors(['address_id' => 'آدرس انتخاب‌شده معتبر نیست.']);
+        }
+
+        $this->checkout->selectAddress($address, $data['notes'] ?? null);
+
+        return redirect()->route('checkout.payment');
+    }
+
+    /**
+     * Step 3: payment method, gift options and discount code.
+     */
+    public function payment(Request $request)
+    {
+        if ($this->cart->items()->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'سبد خرید شما خالی است.');
+        }
+
+        $address = $this->checkout->selectedAddress($request->user());
+
+        if (! $address) {
+            return redirect()->route('checkout.index')->withErrors(['address_id' => 'لطفاً یک آدرس انتخاب کنید.']);
+        }
+
+        return view('checkout.payment', [
+            'items' => $this->cart->itemsWithPrices(),
+            'address' => $address,
+            'gateways' => $this->payments->gatewayOptions(),
+            'quote' => $this->checkout->quote(),
+            'packagingCost' => $this->checkout->quote(isGift: true)['packaging'],
+        ]);
+    }
+
+    public function applyCoupon(Request $request): RedirectResponse
+    {
+        $request->validate(['code' => ['required', 'string', 'max:50']], [
+            'code.required' => 'کد تخفیف را وارد کنید.',
+        ]);
+
+        $error = $this->checkout->applyCoupon($request->string('code')->toString());
+
+        return $error
+            ? back()->withErrors(['code' => $error])
+            : back()->with('success', 'کد تخفیف اعمال شد.');
+    }
+
+    public function removeCoupon(): RedirectResponse
+    {
+        $this->checkout->removeCoupon();
+
+        return back();
+    }
+
+    /**
+     * Create (or refresh) the pending order and hand the buyer to the gateway.
+     */
+    public function store(Request $request, PaymentController $paymentController): RedirectResponse
     {
         if ($this->cart->items()->isEmpty()) {
             return redirect()->route('cart.index');
         }
 
+        $user = $request->user();
+        $address = $this->checkout->selectedAddress($user);
+
+        if (! $address) {
+            return redirect()->route('checkout.index')->withErrors(['address_id' => 'لطفاً یک آدرس انتخاب کنید.']);
+        }
+
         $request->validate([
-            'receiver_name' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'regex:/^09[0-9]{9}$/'],
-            'province' => ['required', 'string', 'max:50'],
-            'city' => ['required', 'string', 'max:50'],
-            'address' => ['required', 'string', 'max:500'],
-            'postal_code' => ['required', 'digits:10'],
             'gateway' => ['required', Rule::in($this->payments->availableGateways())],
+            'is_gift' => ['nullable', 'boolean'],
+            'gift_message' => ['nullable', 'string', 'max:300'],
         ], [
-            'receiver_name.required' => 'نام گیرنده الزامی است.',
-            'phone.required' => 'شماره موبایل الزامی است.',
-            'phone.regex' => 'فرمت شماره موبایل صحیح نیست.',
-            'province.required' => 'استان الزامی است.',
-            'city.required' => 'شهر الزامی است.',
-            'address.required' => 'آدرس الزامی است.',
-            'postal_code.required' => 'کد پستی الزامی است.',
-            'postal_code.digits' => 'کد پستی باید ۱۰ رقم باشد.',
+            'gateway.required' => 'روش پرداخت را انتخاب کنید.',
+            'gateway.in' => 'درگاه پرداخت نامعتبر یا غیرفعال است.',
         ]);
 
-        $goldPrice = GoldPrice::current();
+        $isGift = $request->boolean('is_gift');
+        $quote = $this->checkout->quote($isGift);
         $items = $this->cart->itemsWithPrices();
-        $total = $this->cart->total();
+        $goldPrice = GoldPrice::current();
 
-        $order = DB::transaction(function () use ($request, $goldPrice, $items, $total) {
+        $order = DB::transaction(function () use ($user, $address, $request, $isGift, $quote, $items, $goldPrice) {
             $order = Order::create([
-                'user_id' => Auth::id(),
+                'user_id' => $user->id,
+                'address_id' => $address->id,
                 'status' => 'pending',
-                'total_amount' => $total,
-                'gold_price_snapshot' => $goldPrice?->price_per_gram,
-                'address' => [
-                    'receiver_name' => $request->receiver_name,
-                    'phone' => $request->phone,
-                    'province' => $request->province,
-                    'city' => $request->city,
-                    'address' => $request->address,
-                    'postal_code' => $request->postal_code,
-                ],
-                'notes' => $request->notes,
+                'total_amount' => $quote['total'],
+                'subtotal_amount' => $quote['subtotal'],
+                'shipping_cost' => $quote['shipping'],
+                'packaging_cost' => $quote['packaging'],
+                'discount_amount' => $quote['discount'],
+                'coupon_code' => $quote['coupon']?->code,
+                'is_gift' => $isGift,
+                'gift_message' => $isGift ? $request->input('gift_message') : null,
+                'gold_price_snapshot' => $goldPrice?->price_per_gram ?? 0,
+                'shipping_address' => $this->addressSnapshot($address),
+                'notes' => $this->checkout->notes(),
             ]);
 
             foreach ($items as $item) {
@@ -94,14 +168,34 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            if ($quote['coupon']) {
+                Coupon::whereKey($quote['coupon']->id)->increment('used_count');
+            }
+
             return $order;
         });
 
         $this->cart->clear();
+        $this->checkout->forget();
 
-        // payment.pay is POST-only, so hand off to the order page, which posts
-        // to it with the gateway the customer picked here.
-        return redirect()->route('orders.show', $order)
-            ->with('gateway', $request->gateway);
+        return $paymentController->pay($request, $order);
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    private function addressSnapshot(Address $address): array
+    {
+        return [
+            'title' => $address->title,
+            'receiver_name' => $address->receiver_name,
+            'phone' => $address->phone,
+            'province' => $address->province,
+            'city' => $address->city,
+            'address' => $address->address,
+            'plaque' => $address->plaque,
+            'unit' => $address->unit,
+            'postal_code' => $address->postal_code,
+        ];
     }
 }

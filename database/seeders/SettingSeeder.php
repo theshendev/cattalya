@@ -19,6 +19,8 @@ class SettingSeeder extends Seeder
             'instagram_url' => '',
             'whatsapp_number' => '',
             'free_shipping_threshold' => '12000000',
+            'shipping_cost' => '0',
+            'gift_packaging_cost' => '0',
         ];
 
         foreach ($settings as $key => $value) {

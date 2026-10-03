@@ -4,15 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\CheckoutService;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    public function __construct(private CartService $cart) {}
+    public function __construct(private CartService $cart, private CheckoutService $checkout) {}
 
+    /**
+     * Step 1 of checkout: the full cart page.
+     */
     public function index()
     {
         return view('cart.index', [
+            'items' => $this->cart->itemsWithPrices(),
+            'quote' => $this->checkout->quote(),
+        ]);
+    }
+
+    /**
+     * The slide-over mini cart opened from the header.
+     */
+    public function drawer()
+    {
+        return view('cart.drawer', [
             'items' => $this->cart->itemsWithPrices(),
             'total' => $this->cart->total(),
         ]);

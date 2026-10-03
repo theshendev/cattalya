@@ -158,7 +158,7 @@ class PaymentService
 
                 // Only advance an order that is still awaiting payment.
                 if ($payment->order->status === 'pending') {
-                    $payment->order->update(['status' => 'paid']);
+                    $payment->order->markAsPaid();
                 }
             } else {
                 $payment->status = Payment::STATUS_FAILED;

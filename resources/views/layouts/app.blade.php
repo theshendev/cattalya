@@ -49,7 +49,7 @@
             <a href="{{ auth()->check() ? route('profile.show') : route('login') }}" class="press flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="حساب کاربری">
                 <img src="/icons/user.svg" alt="" class="h-5 w-5">
             </a>
-            <a href="{{ route('cart.index') }}" class="press relative flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="سبد خرید">
+            <a href="{{ route('cart.drawer') }}" class="press relative flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="سبد خرید">
                 <img src="/icons/cart.svg" alt="" class="h-5 w-5">
                 @if($cartCount > 0)
                     <span id="cart-count" data-count="{{ $cartCount }}" class="absolute -left-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8a6300] text-[10px] text-white">{{ $cartCount }}</span>
@@ -147,7 +147,7 @@
 
 <nav class="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-[#e5dcc7] bg-white md:hidden" aria-label="دسترسی سریع">
     <a href="{{ route('home') }}" class="flex h-12 w-12 items-center justify-center" aria-label="خانه"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 11 9-7 9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a>
-    <a href="{{ route('cart.index') }}" class="relative flex h-12 w-12 items-center justify-center" aria-label="سبد خرید"><img src="/icons/cart.svg" alt="" class="h-5 w-5"></a>
+    <a href="{{ route('cart.drawer') }}" class="relative flex h-12 w-12 items-center justify-center" aria-label="سبد خرید"><img src="/icons/cart.svg" alt="" class="h-5 w-5"></a>
     <a href="{{ auth()->check() ? route('profile.show') : route('login') }}" class="flex h-12 w-12 items-center justify-center" aria-label="حساب کاربری"><img src="/icons/user.svg" alt="" class="h-5 w-5"></a>
 </nav>
 

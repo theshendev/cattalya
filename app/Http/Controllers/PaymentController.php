@@ -42,7 +42,8 @@ class PaymentController extends Controller
         );
 
         if (! $response->success) {
-            return back()->withErrors(['payment' => $response->message]);
+            return redirect()->route('orders.result', $order)
+                ->withErrors(['payment' => $response->message]);
         }
 
         return redirect()->away($response->redirectUrl);
@@ -84,10 +85,10 @@ class PaymentController extends Controller
 
         $result = $this->paymentService->verify($request, $gateway, $reference);
 
-        $redirect = redirect()->route('orders.show', $payment->order_id);
+        $redirect = redirect()->route('orders.result', $payment->order_id);
 
         return $result->success
-            ? $redirect->with('success', "پرداخت با موفقیت انجام شد. کد رهگیری: {$result->refCode}")
+            ? $redirect
             : $redirect->withErrors(['payment' => $result->message]);
     }
 }
