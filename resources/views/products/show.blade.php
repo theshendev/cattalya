@@ -3,189 +3,232 @@
 @section('title', $product->name)
 
 @section('content')
-<div class="px-4 md:px-20 py-6 md:py-10">
+@php
+    $images = $product->getMedia('images');
+    $isInStock = $product->stock > 0;
+    $isWished = auth()->check() && auth()->user()->wishlists()->where('product_id', $product->id)->exists();
+    $specs = array_filter([
+        'وزن محصول' => $product->is_fixed_price ? null : number_format((float) $product->weight_grams, 2).' گرم',
+        'اجرت' => $product->is_fixed_price ? null : '%'.(float) $product->wage_percent,
+        'عیار طلا' => $product->karat ? $product->karat.' عیار' : null,
+        'رنگ طلا' => $product->gold_color,
+        'درخشندگی' => $product->shine,
+        'ابعاد تقریبی' => $product->dimensions,
+    ]);
+@endphp
+<div class="px-4 py-6 md:px-20 md:py-8">
 
     {{-- Breadcrumb --}}
-    <nav class="flex items-center gap-2 text-xs md:text-sm text-[#a8a096] mb-6 md:mb-8 justify-end flex-wrap animate-fade-in">
-        <span class="text-[#2b2620] font-medium truncate max-w-[120px] md:max-w-none">{{ $product->name }}</span>
+    <nav class="mb-4 flex flex-wrap items-center gap-2 text-xs text-[#a8a096] animate-fade-in md:mb-5 md:text-sm" aria-label="breadcrumb">
+        <a href="{{ route('home') }}" class="transition-colors hover:text-[#8a6300]">صفحه اصلی</a>
         <span>/</span>
-        <a href="{{ route('products.index', ['category' => $product->category->slug]) }}"
-           class="hover:text-[#8a6300] transition-colors">{{ $product->category->name }}</a>
+        <a href="{{ route('products.index') }}" class="transition-colors hover:text-[#8a6300]">لیست محصولات</a>
         <span>/</span>
-        <a href="{{ route('products.index') }}" class="hover:text-[#8a6300] transition-colors">محصولات</a>
-        <span>/</span>
-        <a href="{{ route('home') }}" class="hover:text-[#8a6300] transition-colors">خانه</a>
+        <span class="max-w-[180px] truncate md:max-w-none">{{ $product->name }}</span>
     </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+    <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_325px]">
 
-        {{-- Images --}}
-        <div class="flex gap-3 md:gap-4">
-            {{-- Thumbnails --}}
-            @php $images = $product->getMedia('images'); @endphp
-            @if($images->count() > 1)
-            <div data-reveal-stagger="70" class="flex flex-col gap-2 md:gap-3 w-14 md:w-20">
-                @foreach($images as $media)
-                <button type="button" data-reveal
-                        onclick="selectImage(this, '{{ $media->getUrl() }}')"
-                        class="thumb w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#8a6300] hover:scale-105 transition-all duration-300 {{ $loop->first ? 'border-[#8a6300]' : '' }}">
-                    <img src="{{ $media->getUrl('thumb') ?: $media->getUrl() }}"
-                         alt="" loading="lazy" class="w-full h-full object-cover">
-                </button>
-                @endforeach
-            </div>
+        {{-- Main column --}}
+        <div class="flex min-w-0 flex-col gap-5 md:gap-8">
+
+            <section class="rounded-3xl bg-white p-4 md:p-5">
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-[auto_1fr] md:gap-8">
+
+                    {{-- Gallery --}}
+                    <div class="flex gap-3 md:gap-4">
+                        <div class="flex flex-col items-center gap-3 pt-1">
+                            @auth
+                            <form method="POST" action="{{ $isWished ? route('wishlist.destroy', $product) : route('wishlist.store', $product) }}" data-no-loading>
+                                @csrf
+                                @if($isWished) @method('DELETE') @endif
+                                <button type="submit" aria-label="{{ $isWished ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' }}" class="flex size-9 items-center justify-center rounded-full transition-transform hover:scale-110">
+                                    <img src="{{ $isWished ? '/icons/heart-filled.svg' : '/icons/heart.svg' }}" alt="" class="size-5">
+                                </button>
+                            </form>
+                            @else
+                            <a href="{{ route('login') }}" aria-label="برای افزودن به علاقه‌مندی‌ها وارد شوید" class="flex size-9 items-center justify-center rounded-full transition-transform hover:scale-110">
+                                <img src="/icons/heart.svg" alt="" class="size-5">
+                            </a>
+                            @endauth
+                        </div>
+
+                        <div class="flex w-full flex-col gap-4 md:w-[380px]">
+                            <div class="group aspect-square overflow-hidden rounded-2xl bg-[#f9f6f3] animate-scale-in">
+                                @if($images->count())
+                                <img id="main-img"
+                                     src="{{ $images->first()->getUrl() }}"
+                                     alt="{{ $product->name }}"
+                                     class="h-full w-full object-cover transition-[transform,opacity] duration-500 ease-out group-hover:scale-105">
+                                @else
+                                <x-jewelry-placeholder :category="$product->category?->slug" />
+                                @endif
+                            </div>
+
+                            @if($images->count() > 1)
+                            <div data-reveal-stagger="70" class="flex gap-3">
+                                @foreach($images as $media)
+                                <button type="button" data-reveal
+                                        onclick="selectImage(this, '{{ $media->getUrl() }}')"
+                                        class="thumb size-[62px] overflow-hidden rounded-xl border bg-[#f9f6f3] transition-all duration-300 hover:scale-105 hover:border-[#8a6300] {{ $loop->first ? 'border-[#8a6300]' : 'border-[#f0e6c8]' }}">
+                                    <img src="{{ $media->getUrl('thumb') ?: $media->getUrl() }}" alt="" loading="lazy" class="h-full w-full object-cover">
+                                </button>
+                                @endforeach
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Summary --}}
+                    <div data-reveal-stagger="70" class="flex flex-col gap-4 text-right">
+                        <h1 data-reveal class="text-xl font-bold leading-9 text-[#2b2620] md:text-2xl">{{ $product->name }}</h1>
+
+                        @if($product->description)
+                        <p data-reveal class="text-sm leading-7 text-[#6b6154] md:text-base">{{ $product->description }}</p>
+                        @endif
+
+                        @if(!$product->is_fixed_price && $goldPrice)
+                        <div data-reveal class="rounded-2xl bg-[#fdeee0] p-3 text-sm md:p-4">
+                            <p class="font-medium text-[#a34d06]">قیمت‌گذاری بر اساس قیمت لحظه‌ای طلا</p>
+                            <p class="mt-1 text-[#6b6154]">
+                                قیمت طلای ۱۸ عیار:
+                                <strong class="text-[#a34d06]">{{ number_format($goldPrice->price_per_gram) }} تومان/گرم</strong>
+                            </p>
+                        </div>
+                        @endif
+
+                        <div data-reveal class="flex items-center gap-2 border-t border-[#f0e6c8] pt-4 text-xs text-[#6b6154] md:text-sm">
+                            <img src="/icons/gift.svg" alt="" class="size-5">
+                            <span>امکان ارسال به عنوان هدیه، همراه با بسته‌بندی مخصوص.</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Trust badges --}}
+                <div class="mt-5 flex flex-wrap items-center justify-start gap-x-8 gap-y-3 border-t border-[#f0e6c8] pt-5 md:mt-6">
+                    @foreach([
+                        ['icon' => 'shield', 'text' => 'ضمانت اصالت کالا'],
+                        ['icon' => 'truck', 'text' => 'ارسال رایگان'],
+                        ['icon' => 'gift', 'text' => 'بسته‌بندی هدیه‌ای'],
+                    ] as $badge)
+                    <div class="flex items-center gap-2 text-xs text-[#6b6154] md:text-sm">
+                        <img src="/icons/{{ $badge['icon'] }}.svg" alt="" class="size-6">
+                        <span>{{ $badge['text'] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </section>
+
+            {{-- Details --}}
+            @if($specs)
+            <section data-reveal class="grid grid-cols-1 gap-5 rounded-3xl bg-white p-5 md:grid-cols-[1fr_2fr] md:gap-8 md:p-8">
+                <div class="text-right">
+                    <h2 class="text-lg font-bold text-[#2b2620] md:text-xl">جزئیات محصول</h2>
+                    <p class="mt-3 text-sm leading-7 text-[#6b6154]">در این قسمت جزئیات فیزیکی و ظاهری محصول قابل مشاهده می‌باشد.</p>
+                </div>
+                <dl class="flex flex-col">
+                    @foreach($specs as $label => $value)
+                    <div class="flex items-center justify-between gap-4 border-b border-[#f0e6c8] py-3 last:border-b-0">
+                        <dt class="text-sm text-[#a8a096]">{{ $label }}:</dt>
+                        <dd class="text-sm font-medium text-[#2b2620]">{{ $value }}</dd>
+                    </div>
+                    @endforeach
+                </dl>
+            </section>
             @endif
 
-            {{-- Main Image --}}
-            <div class="flex-1 aspect-square rounded-2xl md:rounded-3xl overflow-hidden bg-[#f9f6f3] group animate-scale-in">
-                @if($images->count())
-                <img id="main-img"
-                     src="{{ $images->first()->getUrl() }}"
-                     alt="{{ $product->name }}"
-                     class="w-full h-full object-cover transition-[transform,opacity] duration-500 ease-out group-hover:scale-105">
-                @else
-                <div class="w-full h-full flex items-center justify-center text-[#a8a096]">
-                    <svg class="w-16 h-16 md:w-24 md:h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+            {{-- Similar products --}}
+            @if($related->count())
+            <section class="mt-2">
+                <h2 data-reveal class="mb-5 text-right text-lg font-bold text-[#2b2620] md:text-xl">محصولات مشابه</h2>
+                <div data-reveal-stagger="60" class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+                    @foreach($related->take(3) as $relProduct)
+                    <x-product-card :product="$relProduct" />
+                    @endforeach
                 </div>
-                @endif
-            </div>
+            </section>
+            @endif
         </div>
 
-        {{-- Product Info --}}
-        <div data-reveal-stagger="70" class="flex flex-col gap-4 md:gap-6 text-right">
+        {{-- Invoice sidebar --}}
+        <aside data-reveal class="rounded-3xl border border-[#f0e6c8] bg-white p-5 lg:sticky lg:top-6">
+            <h2 class="text-right text-sm text-[#a8a096]">فاکتور خرید</h2>
 
-            <a href="{{ route('products.index', ['category' => $product->category->slug]) }}"
-               data-reveal
-               class="press self-end text-xs bg-[#fdeee0] text-[#a34d06] px-3 py-1 rounded-full font-medium hover:bg-[#f0e6c8]">
-                {{ $product->category->name }}
-            </a>
-
-            <h1 data-reveal class="text-xl md:text-2xl font-bold text-[#2b2620] leading-8 md:leading-9">{{ $product->name }}</h1>
-
-            @if(!$product->is_fixed_price && $goldPrice)
-            <div data-reveal class="bg-[#fdeee0] rounded-2xl p-3 md:p-4 text-sm">
-                <p class="text-[#a34d06] font-medium">قیمت‌گذاری بر اساس قیمت لحظه‌ای طلا</p>
-                <p class="text-[#6b6154] mt-1">
-                    قیمت طلای ۱۸ عیار:
-                    <strong class="text-[#a34d06]">{{ number_format($goldPrice->price_per_gram) }} تومان/گرم</strong>
-                </p>
-            </div>
-            @endif
-
-            {{-- Price breakdown --}}
-            <div data-reveal class="bg-[#f9f6f3] rounded-2xl p-4 md:p-5 flex flex-col gap-3">
+            <dl class="mt-4 flex flex-col text-sm">
+                <div class="flex items-center justify-between gap-3 py-3">
+                    <dt class="text-[#a8a096]">وضعیت محصول:</dt>
+                    <dd>
+                        @if($isInStock)
+                        <span class="rounded-lg bg-[#e6f6ec] px-3 py-1 text-xs font-medium text-[#1a7f3c]">آماده ارسال</span>
+                        @else
+                        <span class="rounded-lg bg-[#fbeaea] px-3 py-1 text-xs font-medium text-[#c0392b]">ناموجود</span>
+                        @endif
+                    </dd>
+                </div>
                 @if(!$product->is_fixed_price)
-                <div class="flex items-center justify-between text-xs md:text-sm text-[#6b6154]">
-                    <span dir="ltr" class="text-left">{{ number_format($product->weight_grams, 3) }}g × {{ number_format($goldPrice?->price_per_gram ?? 0) }}</span>
-                    <span>وزن × قیمت طلا</span>
+                <div class="flex items-center justify-between gap-3 border-t border-[#f0e6c8] py-4">
+                    <dt class="text-[#a8a096]">وزن:</dt>
+                    <dd class="text-[#2b2620]">{{ number_format((float) $product->weight_grams, 2) }} گرم</dd>
                 </div>
-                <div class="flex items-center justify-between text-xs md:text-sm text-[#6b6154]">
-                    <span>{{ $product->wage_percent }}%</span>
-                    <span>اجرت ساخت</span>
+                <div class="flex items-center justify-between gap-3 border-t border-[#f0e6c8] py-4">
+                    <dt class="text-[#a8a096]">اجرت:</dt>
+                    <dd class="text-[#2b2620]">%{{ (float) $product->wage_percent }}</dd>
                 </div>
-                <div class="flex items-center justify-between text-xs md:text-sm text-[#6b6154]">
-                    <span>{{ $product->tax_percent }}%</span>
-                    <span>مالیات</span>
+                <div class="flex items-center justify-between gap-3 border-t border-[#f0e6c8] py-4">
+                    <dt class="text-[#a8a096]">مالیات:</dt>
+                    <dd class="text-[#2b2620]">%{{ (float) $product->tax_percent }}</dd>
                 </div>
-                <div class="h-px bg-[#e3d2a0]"></div>
                 @endif
-                <div class="flex items-center justify-between">
-                    <span class="text-xl md:text-2xl font-bold text-[#2b2620]">
+                <div class="flex items-center justify-between gap-3 border-t border-[#f0e6c8] py-4">
+                    <dt class="text-[#a8a096]">عیار طلا:</dt>
+                    <dd class="text-[#2b2620]">{{ $product->karat }} عیار</dd>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-[#f0e6c8] pt-4">
+                    <dt class="text-[#a8a096]">قیمت نهایی:</dt>
+                    <dd class="text-lg font-bold text-[#2b2620]">
                         {{ number_format($product->calculatePrice()) }}
-                        <span class="text-sm md:text-base font-normal text-[#6b6154]">تومان</span>
-                    </span>
-                    <span class="text-xs md:text-sm text-[#6b6154] font-medium">قیمت نهایی</span>
+                        <span class="text-sm font-normal">تومان</span>
+                    </dd>
                 </div>
-            </div>
+            </dl>
 
-            {{-- Stock --}}
-            <div data-reveal class="flex items-center justify-end gap-2">
-                @if($product->stock > 0)
-                <span class="text-sm text-green-600 font-medium">موجود در انبار</span>
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse-ring"></div>
-                @else
-                <span class="text-sm text-red-500 font-medium">ناموجود</span>
-                <div class="w-2 h-2 rounded-full bg-red-400"></div>
-                @endif
-            </div>
-
-            {{-- Add to Cart --}}
-            <div data-reveal class="flex items-center gap-3">
-                @if($product->stock > 0)
-                <form method="POST" action="{{ route('cart.add', $product) }}" class="flex-1">
+            <div class="mt-5">
+                @if($isInStock)
+                <form method="POST" action="{{ route('cart.add', $product) }}">
                     @csrf
-                    <button type="submit"
-                            class="press w-full bg-[#8a6300] text-white font-bold py-3 md:py-4 rounded-2xl hover:bg-[#6b4d00] hover:shadow-xl hover:shadow-[#8a6300]/25">
+                    <button type="submit" class="press flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#111] font-medium text-white hover:bg-[#2b2620]">
+                        <img src="/icons/cart.svg" alt="" class="size-5 invert">
                         افزودن به سبد خرید
                     </button>
                 </form>
                 @else
-                <div class="flex-1 bg-[#f0e6c8] text-[#a8a096] font-bold py-3 md:py-4 rounded-2xl text-center">ناموجود</div>
+                <div class="flex h-12 w-full items-center justify-center rounded-2xl bg-[#f0e6c8] font-medium text-[#a8a096]">ناموجود</div>
                 @endif
-                @php $isWished = auth()->check() && auth()->user()->wishlists()->where('product_id', $product->id)->exists(); @endphp
-                @auth
-                <form method="POST" action="{{ $isWished ? route('wishlist.destroy', $product) : route('wishlist.store', $product) }}" data-no-loading>
-                    @csrf
-                    @if($isWished) @method('DELETE') @endif
-                    <button type="submit" aria-label="{{ $isWished ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها' }}" class="flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-all hover:scale-105 md:size-14 {{ $isWished ? 'border-red-200 bg-[#fbeaea]' : 'border-[#f0e6c8] bg-[#f9f6f3] hover:border-red-200 hover:bg-[#fbeaea]' }}">
-                        <img src="{{ $isWished ? '/icons/heart-filled.svg' : '/icons/heart.svg' }}" alt="" class="size-5 md:size-6">
-                    </button>
-                </form>
-                @else
-                <a href="{{ route('login') }}" aria-label="برای افزودن به علاقه‌مندی‌ها وارد شوید" class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-[#f0e6c8] bg-[#f9f6f3] transition-all hover:scale-105 hover:border-red-200 hover:bg-[#fbeaea] md:size-14">
-                    <img src="/icons/heart.svg" alt="" class="size-5 md:size-6">
-                </a>
-                @endauth
             </div>
 
-            {{-- Guarantees --}}
-            <div data-reveal data-reveal-stagger="50" class="grid grid-cols-2 gap-2 md:gap-3">
-                @foreach([
-                    ['text' => 'ضمانت اصالت کالا'],
-                    ['text' => 'ارسال سریع و مطمئن'],
-                    ['text' => 'امکان مرجوع کردن'],
-                    ['text' => 'بسته‌بندی هدیه‌ای'],
-                ] as $g)
-                <div class="flex items-center justify-end gap-2 bg-[#f9f6f3] rounded-xl px-3 py-2 transition-colors duration-300 hover:bg-[#fdeee0]">
-                    <span class="text-xs text-[#6b6154]">{{ $g['text'] }}</span>
-                    <svg class="w-4 h-4 text-[#8a6300] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
+            <div class="mt-5 border-t border-[#f0e6c8] pt-4 text-center">
+                <p class="text-sm text-[#a8a096]">با ما در تماس باشید.</p>
+                <div class="mt-3 flex items-center justify-center gap-3">
+                    @foreach(['sms', 'whatsapp', 'instagram'] as $icon)
+                    <span class="flex size-10 items-center justify-center rounded-full border border-[#e3d2a0] bg-white">
+                        <img src="/icons/{{ $icon }}.svg" alt="" class="size-5">
+                    </span>
+                    @endforeach
                 </div>
-                @endforeach
             </div>
-
-            {{-- Description --}}
-            @if($product->description)
-            <div data-reveal class="border-t border-[#f0e6c8] pt-4 md:pt-5">
-                <h3 class="font-bold text-[#2b2620] mb-3">توضیحات محصول</h3>
-                <p class="text-sm text-[#6b6154] leading-7">{{ $product->description }}</p>
-            </div>
-            @endif
-        </div>
+        </aside>
     </div>
-
-    {{-- Related Products --}}
-    @if($related->count())
-    <section class="mt-12 md:mt-16">
-        <h2 data-reveal class="text-lg md:text-xl font-bold text-[#2b2620] text-right mb-5 md:mb-6">محصولات مرتبط</h2>
-        <div data-reveal-stagger="60" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-5">
-            @foreach($related as $relProduct)
-            <x-product-card :product="$relProduct" />
-            @endforeach
-        </div>
-    </section>
-    @endif
-
 </div>
 
 <script>
 function selectImage(button, url) {
     const img = document.getElementById('main-img');
     if (!img) return;
-    document.querySelectorAll('.thumb').forEach((t) => t.classList.remove('border-[#8a6300]'));
+    document.querySelectorAll('.thumb').forEach((t) => {
+        t.classList.remove('border-[#8a6300]');
+        t.classList.add('border-[#f0e6c8]');
+    });
+    button.classList.remove('border-[#f0e6c8]');
     button.classList.add('border-[#8a6300]');
 
     // Cross-fade to the new image once it has loaded.
