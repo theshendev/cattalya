@@ -80,7 +80,7 @@ class CheckoutController extends Controller
         return view('checkout.payment', [
             'items' => $this->cart->itemsWithPrices(),
             'address' => $address,
-            'gateways' => $this->payments->gatewayOptions(),
+            'gateways' => $this->payments->gatewayOptions($this->checkout->quote()['total']),
             'quote' => $this->checkout->quote(),
             'packagingCost' => $this->checkout->quote(isGift: true)['packaging'],
         ]);
@@ -122,8 +122,11 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.index')->withErrors(['address_id' => 'لطفاً یک آدرس انتخاب کنید.']);
         }
 
+        $isGift = $request->boolean('is_gift');
+        $quote = $this->checkout->quote($isGift);
+
         $request->validate([
-            'gateway' => ['required', Rule::in($this->payments->availableGateways())],
+            'gateway' => ['required', Rule::in(array_keys($this->payments->gatewayOptions($quote['total'])))],
             'is_gift' => ['nullable', 'boolean'],
             'gift_message' => ['nullable', 'string', 'max:300'],
         ], [
@@ -131,8 +134,6 @@ class CheckoutController extends Controller
             'gateway.in' => 'درگاه پرداخت نامعتبر یا غیرفعال است.',
         ]);
 
-        $isGift = $request->boolean('is_gift');
-        $quote = $this->checkout->quote($isGift);
         $items = $this->cart->itemsWithPrices();
         $goldPrice = GoldPrice::current();
 

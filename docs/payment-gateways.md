@@ -1,17 +1,28 @@
 # درگاه‌های پرداخت — Payment Gateway Requirements
 
-Reference for the three gateways wired into Cattalya: what each one needs
-before it will work, what it expects on the wire, and what it sends back.
+Reference for the four gateways wired into Cattalya (ZarinPal, IDPay, DigiPay,
+SnappPay) plus notes on other Iranian gateways that could be added: what each
+one needs before it will work, what it expects on the wire, and what it sends
+back.
 
-Sources (verified against the official docs):
+Sources (verified against the official docs where public):
 
 - ZarinPal — <https://www.zarinpal.com/docs/paymentGateway/>
 - IDPay v1.1 — <https://idpay.ir/web-service/v1.1/>
 - DigiPay UPG — <https://www.mydigipay.com/developers/docs/upg/>
+- SnappPay — the merchant spec is **confidential** (sent by SnappPay after the
+  contract). Section 5 is reconstructed from public client libraries and
+  flags what still has to be confirmed against your copy.
+
+At checkout the buyer sees every gateway that is enabled **and** has all its
+credentials, as long as the order total is inside the gateway's amount window
+(`supportsAmount()`, used by instalment gateways). Labels and the one-line
+description under each name come from `config/gateways.php`
+(`label`, `description`).
 
 ---
 
-## 1. Concepts shared by all three
+## 1. Concepts shared by all gateways
 
 ### Currency
 
@@ -31,6 +42,7 @@ chars) **before** the gateway is called. It is sent as:
 | ZarinPal | `metadata.order_id` + a `?ref=` query param we add to `callback_url` |
 | IDPay    | `order_id` |
 | DigiPay  | `providerId` |
+| SnappPay | `transactionId` + a `?ref=` query param we add to `returnURL` |
 
 Callbacks are unauthenticated, so the reference is how a callback is matched
 to a payment. Everything else in the request is then checked against the
@@ -38,13 +50,15 @@ stored row.
 
 ### Verification is mandatory and time-boxed
 
-All three gateways **auto-reverse** a payment that is never verified:
+Every gateway here **auto-reverses** a payment that is never verified (and
+SnappPay also reverses one that is verified but never *settled*):
 
 | Gateway  | Verify window |
 | -------- | ------------- |
 | ZarinPal | No hard limit, but unverified transactions are recoverable only via `unVerified.json` |
 | IDPay    | **10 minutes** |
 | DigiPay  | **10 minutes** |
+| SnappPay | verify **and** settle are both required; the window is set by the contract (unconfirmed) |
 
 If the buyer closes the browser during the redirect, the callback never fires.
 Use the reconciliation helpers (`ZarinPalGateway::unverified()`,
@@ -386,13 +400,188 @@ driver logs this as `retryable`; a retry job is a sensible follow-up.
 
 ---
 
-## 5. Code map
+## 5. SnappPay (اسنپ‌پی) — instalments
+
+> **Status: implemented from public client libraries, not from the official
+> spec.** SnappPay gives the technical document only to merchants who have
+> signed the contract. Field names below come from
+> [backendprogramer/laravel-snapp-pay](https://github.com/backendprogramer/laravel-snapp-pay)
+> and [amiranmanesh/payvand](https://pkg.go.dev/github.com/amiranmanesh/payvand/gateway/snapppay).
+> Before going live, diff `SnappPayGateway` against the PDF you receive — the
+> checklist at the end of this section lists exactly what to check.
+
+### What it is
+
+Buy-now-pay-later: SnappPay lends the buyer the order amount in instalments
+and pays the merchant in full. It is an *additional* payment method, so it is
+only offered inside the instalment window from your contract.
+
+### Credentials
+
+All five are issued by SnappPay support after the contract. There is no public
+sandbox signup — ask your account manager for a test base URL and credentials.
+
+| Variable | Meaning |
+| -------- | ------- |
+| `SNAPPPAY_ENABLED` | `true` to offer it at checkout (default `false`) |
+| `SNAPPPAY_BASE_URL` | API host, e.g. `https://api.snapppay.ir` (test host from SnappPay) |
+| `SNAPPPAY_USERNAME` / `SNAPPPAY_PASSWORD` | merchant user (OAuth password grant) |
+| `SNAPPPAY_CLIENT_ID` / `SNAPPPAY_CLIENT_SECRET` | OAuth client, sent as HTTP Basic |
+| `SNAPPPAY_SCOPE` | defaults to `online-merchant` |
+| `SNAPPPAY_AUTO_SETTLE` | `true` = settle straight after verify (default) |
+| `SNAPPPAY_MIN_AMOUNT` / `SNAPPPAY_MAX_AMOUNT` | instalment window in **Tomans** from the contract; `0` = no limit |
+
+### Endpoints (relative to the base URL)
+
+| Purpose | Method + path |
+| ------- | ------------- |
+| Access token | `POST api/online/v1/oauth/token` |
+| Eligibility | `GET api/online/offer/v1/eligible` (not used; the amount window replaces it) |
+| Create payment | `POST api/online/payment/v1/token` |
+| Verify | `POST api/online/payment/v1/verify` |
+| Settle | `POST api/online/payment/v1/settle` |
+| Revert (refund, full amount) | `POST api/online/payment/v1/revert` |
+| Cancel (unfinished payment) | `POST api/online/payment/v1/cancel` |
+| Update basket | `POST api/online/payment/v1/update` (not used) |
+| Status | `GET api/online/payment/v1/status` |
+
+### Step 1 — access token
+
+`POST` urlencoded form, `Authorization: Basic base64(client_id:client_secret)`:
+
+```
+grant_type=password
+scope=online-merchant
+username=…
+password=…
+```
+
+Returns `access_token` and `expires_in`. The driver caches it (a little short
+of `expires_in`) and retries once with a fresh token on a `401`.
+
+### Step 2 — create the payment
+
+`POST` JSON with `Authorization: Bearer {access_token}`. **All amounts are in
+Rials.**
+
+```json
+{
+  "amount": 10700000,
+  "discountAmount": 500000,
+  "externalSourceAmount": 0,
+  "paymentMethodTypeDto": "INSTALLMENT",
+  "returnURL": "https://shop.example/payment/callback/snapppay?ref=CTL-12-ab12",
+  "transactionId": "CTL-12-ab12",
+  "mobile": "+989121234567",
+  "cartList": [{
+    "cartId": "12",
+    "cartItems": [
+      { "id": "7", "name": "گوشواره", "count": 2, "amount": 5000000,
+        "category": "جواهر و زیورآلات", "commissionType": 100 },
+      { "id": "gift-packaging", "name": "بسته‌بندی هدیه", "count": 1, "amount": 200000,
+        "category": "خدمات", "commissionType": 100 }
+    ],
+    "isShipmentIncluded": false,
+    "isTaxIncluded": true,
+    "shippingAmount": 1000000,
+    "taxAmount": 0,
+    "totalAmount": 11200000
+  }]
+}
+```
+
+How the numbers relate (the reason a rejected basket is usually an
+arithmetic problem):
+
+- `cartItems[].amount` = **unit** price; `count` multiplies it.
+- `totalAmount` = Σ(unit × count) + `shippingAmount` (shipping is *not*
+  included in the items, so `isShipmentIncluded` is `false`).
+- `amount` = what the buyer actually pays = `totalAmount − discountAmount`.
+- Prices already include tax, hence `isTaxIncluded: true` / `taxAmount: 0`.
+- Gift packaging is sent as its own line so the basket still adds up.
+
+Successful response (`successful: true`) carries `response.paymentToken` and
+`response.paymentPageUrl`. The token is stored as `payments.authority`; the
+buyer is redirected to the page URL. Failures return `successful: false` with
+`errorData.{errorCode,message}`, which is shown to the buyer.
+
+### Step 3 — return from SnappPay
+
+SnappPay sends the buyer to `returnURL`. The route resolves our payment from
+`?ref=` (or a `transactionId` field). **The outcome parameter on the callback
+is advisory only** — the payment is final after verify + settle, so the driver
+ignores it and always asks SnappPay.
+
+### Step 4 — verify, then settle
+
+1. `POST …/verify {"paymentToken": "…"}` — a non-success answer (declined
+   credit check, abandoned page, expired) marks the payment failed and the
+   order stays `pending`, so the buyer can retry or pick another method.
+2. `POST …/settle {"paymentToken": "…"}` — releases the money to you.
+3. If settle fails, the driver calls `…/revert` immediately: SnappPay would
+   revert a verified-but-unsettled payment anyway, and we must not mark the
+   order paid for money we will not receive.
+
+Set `SNAPPPAY_AUTO_SETTLE=false` only if your own code settles later (for
+example after dispatch) — an unsettled payment is reverted by SnappPay.
+
+### Refunds, cancel, lost callbacks
+
+`SnappPayGateway::revert($token)` refunds a settled payment in full (partial
+amounts are ignored by SnappPay). `cancel($token)` frees the buyer's reserved
+credit for an unfinished payment. `status($token)` reads the current state —
+use it from a scheduled job to recover from a callback that never arrived.
+
+### Confirm against the official PDF before go-live
+
+- [ ] Base URL for test and production, and that test credentials work.
+- [ ] Exact name of the hosted-page URL field (`response.paymentPageUrl`).
+- [ ] `mobile` format (`+98912…` is sent; some integrations send `0912…`).
+- [ ] `commissionType` / `category` values your contract expects.
+- [ ] Whether the callback carries `transactionId` and an outcome flag, and
+      their names.
+- [ ] Verify/settle time limits and whether your contract uses auto-settle.
+- [ ] Minimum and maximum instalment amounts → `SNAPPPAY_MIN_AMOUNT/MAX_AMOUNT`.
+- [ ] Error-code table for `errorData.errorCode` (add it to the driver like the
+      ZarinPal/DigiPay tables).
+
+---
+
+## 6. Other gateways you can add
+
+Not wired in, listed so a future driver starts from the right facts. All
+amounts are Rials unless noted. "Same shape" means it fits the existing
+`pay()` / `resolveReference()` / `verify()` contract with no framework change.
+
+| Gateway | Type | Entry points | Notes |
+| ------- | ---- | ------------ | ----- |
+| **Torob Pay** (ترب‌پی) | Instalments (4 payments), merchant paid in full | `api.torobpay.com`; OAuth password grant, then token → hosted page → verify | Same shape as SnappPay. A basket is mandatory — a purchase without one is refused. Optional settle step; an unsettled payment is lost, so check whether your contract needs it. Spec: contact Torob Pay. |
+| **Zibal** | Card IPG | request → `trackId`; redirect `https://gateway.zibal.ir/start/{trackId}`; `/v1/verify` | Callback query: `trackId`, `success`, `status`, `orderId`. Decide on the verify result only (`100` verified, `201` already verified). |
+| **Vandar** | Card IPG | `https://ipg.vandar.io`: `/api/v3/send`, redirect `/v3/{token}`, `/api/v3/verify`, `/api/v3/transaction` | API key auth; the test key works on the same host. Docs: <https://vandarpay.github.io/docs/ipg/>. |
+| **PayPing** | Card IPG | v2: `https://api.payping.ir/v2/pay`, `…/pay/gotoipg/{code}`, `…/pay/verify`; v3 is REST with a payment code | v3 callback is a POST form whose `data` field is JSON; verify needs `paymentCode` + `amount`. OpenAPI: <https://swagger.payping.ir/>. |
+| **Pay.ir** | Card IPG | token → `https://pay.ir/pg/{token}` → verify | Docs: <https://docs.pay.ir/gateway/>. |
+| **NextPay** | Card IPG | token-based | Docs: <https://nextpay.org/nx/docs>. |
+| **Bank IPGs** (Saman/SEP, Mellat/BehPardakht, Parsian, Pasargad, Melli/Sadad) | Direct bank | per-bank contract and spec | Need a bank merchant contract and a registered IP/domain; most aggregator gateways above wrap these with simpler REST. |
+
+Sources used for this table:
+[Torob Pay (payvand)](https://pkg.go.dev/github.com/amiranmanesh/payvand/gateway/torobpay),
+[Zibal (payvand)](https://pkg.go.dev/github.com/amiranmanesh/payvand/gateway/zibal),
+[Vandar (payvand)](https://pkg.go.dev/github.com/amiranmanesh/payvand/gateway/vandar),
+[PayPing](https://github.com/payping),
+[Pay.ir docs](https://docs.pay.ir/gateway/),
+[NextPay docs](https://nextpay.org/nx/docs).
+Re-verify each against the vendor's own docs before writing the driver; these
+are secondary sources.
+
+---
+
+## 7. Code map
 
 | File | Role |
 | ---- | ---- |
 | `config/gateways.php` | credentials, endpoints, enable flags |
 | `app/Services/Payment/Contracts/PaymentGateway.php` | driver interface |
-| `app/Services/Payment/Gateways/AbstractGateway.php` | HTTP client, credential gating, log scrubbing |
+| `app/Services/Payment/Gateways/AbstractGateway.php` | HTTP client, credential gating, amount window, log scrubbing |
 | `app/Services/Payment/Gateways/*Gateway.php` | one per gateway, with its official code tables |
 | `app/Services/Payment/PaymentService.php` | row creation, locking, idempotency, order transition |
 | `app/Http/Controllers/PaymentController.php` | initiate + callback |
@@ -400,9 +589,15 @@ driver logs this as `retryable`; a retry job is a sensible follow-up.
 ### Adding a gateway
 
 1. Add a `drivers.{name}` block to `config/gateways.php`.
+   Include `label` and a one-line `description` — the checkout shows both.
 2. Extend `AbstractGateway`; implement `name()`, `requiredCredentials()`,
-   `pay()`, `resolveReference()`, `verify()`.
+   `pay()`, `resolveReference()`, `verify()`. Override `supportsAmount()` for
+   instalment gateways that only accept a contracted amount range.
 3. Register it in `PaymentService::$drivers`.
+4. Add its variables to `.env.example` and a section here.
+5. Test it with `Http::fake()` the way `tests/Feature/SnappPayGatewayTest.php`
+   and `PaymentGatewayTest.php` do — request body, success, gateway error,
+   callback verify, and the "never mark paid on failure" cases.
 
 The checkout selector, the order page and validation all read from
 `PaymentService::gatewayOptions()`, so nothing else needs changing. The
@@ -410,7 +605,7 @@ The checkout selector, the order page and validation all read from
 
 ---
 
-## 6. Go-live checklist
+## 8. Go-live checklist
 
 - [ ] `APP_URL` is the real public HTTPS domain.
 - [ ] Callback domain registered with every gateway in use.
@@ -420,3 +615,7 @@ The checkout selector, the order page and validation all read from
 - [ ] A queued reconciliation job covering lost callbacks inside each verify
       window (IDPay/DigiPay: 10 minutes).
 - [ ] `PAYMENT_GATEWAY` default points at a gateway that is actually enabled.
+- [ ] SnappPay: every box in "Confirm against the official PDF" is ticked and
+      `SNAPPPAY_MIN_AMOUNT/MAX_AMOUNT` match the contract.
+- [ ] Run one real small payment per gateway end to end (pay, callback, order
+      shows as paid, stock reduced) before announcing it.

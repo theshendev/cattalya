@@ -43,6 +43,15 @@ abstract class AbstractGateway implements PaymentGateway
     }
 
     /**
+     * Whether this gateway can take a payment of this size (in Tomans).
+     * Instalment gateways override it with their contracted limits.
+     */
+    public function supportsAmount(float $toman): bool
+    {
+        return true;
+    }
+
+    /**
      * Config keys that must be non-empty before this gateway can be used.
      *
      * @return list<string>

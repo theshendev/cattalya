@@ -20,6 +20,11 @@ interface PaymentGateway
     public function isConfigured(): bool;
 
     /**
+     * Whether the gateway can take a payment of this size (in Tomans).
+     */
+    public function supportsAmount(float $toman): bool;
+
+    /**
      * Ask the gateway for a payment session and return where to send the user.
      *
      * The Payment row already exists and carries the reference the gateway

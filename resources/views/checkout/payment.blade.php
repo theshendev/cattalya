@@ -29,19 +29,12 @@
                         <span class="flex items-center gap-3 text-right">
                             <span>
                                 <span class="block font-bold text-[#2b2620]">{{ $label }}</span>
-                                <span class="block text-xs text-[#a8a096]">پرداخت آنلاین با تمامی کارت‌های بانکی</span>
+                                <span class="block text-xs text-[#a8a096]">{{ config("gateways.drivers.{$value}.description", 'پرداخت آنلاین') }}</span>
                             </span>
                             <img src="/icons/cart.svg" alt="" class="size-8 opacity-70">
                         </span>
                     </label>
                     @endforeach
-                    <div class="flex items-center justify-between gap-4 py-4 opacity-50" aria-disabled="true">
-                        <span class="size-5 rounded-full border border-[#d9d4cb]"></span>
-                        <span class="text-right">
-                            <span class="block font-bold text-[#2b2620]">اسنپ پی <span class="mr-2 rounded-full bg-[#f0e6c8] px-2 py-0.5 text-[10px] font-normal">بزودی</span></span>
-                            <span class="block text-xs text-[#a8a096]">پرداخت ۴ قسطه با اسنپ پی</span>
-                        </span>
-                    </div>
                 </div>
                 @endif
             </section>
