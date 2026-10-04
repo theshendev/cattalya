@@ -119,11 +119,11 @@ function flushServerFlashes() {
 /* ------------------------------------------------------------------
  * Scroll reveal
  * ------------------------------------------------------------------ */
-function initReveal() {
-    const items = document.querySelectorAll('[data-reveal]');
+function initReveal(instant = false) {
+    const items = document.querySelectorAll('[data-reveal]:not(.is-visible)');
     if (!items.length) return;
 
-    if (!('IntersectionObserver' in window)) {
+    if (instant || !('IntersectionObserver' in window)) {
         items.forEach((el) => el.classList.add('is-visible'));
         return;
     }
@@ -197,7 +197,11 @@ function initHeader() {
         window.addEventListener('scroll', onScroll, { passive: true });
     }
 
-    // Bump the cart count once per page load when it just changed.
+    initCartBadge();
+}
+
+function initCartBadge() {
+    // Bump the cart count when it just changed.
     const badge = document.getElementById('cart-count');
     if (badge) {
         const count = badge.dataset.count;
@@ -226,6 +230,241 @@ function initBackToTop() {
     btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
+
+/* ------------------------------------------------------------------
+ * SPA-style navigation (no full page reloads)
+ * Intercepts links and forms, fetches the next page and swaps <main>.
+ * Anything unusual falls back to a normal browser navigation.
+ * ------------------------------------------------------------------ */
+const FULL_RELOAD_PATHS = ['/admin', '/payment', '/login', '/logout', '/checkout'];
+let navController = null;
+let progressTimer = null;
+
+const isFullReloadPath = (path) =>
+    FULL_RELOAD_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+
+function progressBar() {
+    let el = document.getElementById('nav-progress');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'nav-progress';
+        document.body.appendChild(el);
+    }
+    return el;
+}
+
+function progressStart() {
+    const el = progressBar();
+    clearTimeout(progressTimer);
+    el.style.transition = 'none';
+    el.style.opacity = '1';
+    el.style.transform = 'scaleX(0.08)';
+    requestAnimationFrame(() => {
+        el.style.transition = 'transform 8s cubic-bezier(.1,.7,.2,1)';
+        el.style.transform = 'scaleX(0.9)';
+    });
+}
+
+function progressDone() {
+    const el = progressBar();
+    el.style.transition = 'transform .2s ease-out';
+    el.style.transform = 'scaleX(1)';
+    progressTimer = setTimeout(() => {
+        el.style.transition = 'opacity .25s ease';
+        el.style.opacity = '0';
+    }, 220);
+}
+
+function runInlineScripts(root) {
+    root.querySelectorAll('script').forEach((old) => {
+        if (old.type && old.type !== 'text/javascript' && old.type !== 'module') return;
+        const fresh = document.createElement('script');
+        fresh.textContent = old.textContent;
+        old.replaceWith(fresh);
+    });
+}
+
+function collapseMobileMenu() {
+    const button = document.getElementById('mobile-menu-btn');
+    if (button?.getAttribute('aria-expanded') === 'true') button.click();
+}
+
+function applyDocument(doc, { sameUrl }) {
+    const nextMain = doc.querySelector('main');
+    const main = document.querySelector('main');
+    document.title = doc.title;
+
+    // Header bits that depend on the route / cart contents.
+    for (const id of ['desktop-nav', 'cart-link']) {
+        const next = doc.getElementById(id);
+        const current = document.getElementById(id);
+        if (next && current) current.innerHTML = next.innerHTML;
+    }
+    initCartBadge();
+
+    main.innerHTML = nextMain.innerHTML;
+    main.classList.remove('page-enter');
+    if (!sameUrl) {
+        void main.offsetWidth;
+        main.classList.add('page-enter');
+    }
+    runInlineScripts(main);
+    document.body.style.overflow = '';
+    collapseMobileMenu();
+    initReveal(sameUrl);
+
+    const flashNode = doc.getElementById('flash-messages');
+    const existing = document.getElementById('flash-messages');
+    if (existing) existing.remove();
+    if (flashNode) {
+        document.body.prepend(flashNode.cloneNode(true));
+        flushServerFlashes();
+    }
+}
+
+/**
+ * Load a URL and swap it in. Returns true when handled in-page.
+ */
+async function visit(url, { method = 'GET', body = null, push = true, restoreScroll = null } = {}) {
+    navController?.abort();
+    const controller = (navController = new AbortController());
+    progressStart();
+
+    const current = location.pathname + location.search;
+    try {
+        const response = await fetch(url, {
+            method,
+            body,
+            signal: controller.signal,
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'text/html,application/xhtml+xml',
+                ...(method !== 'GET' ? { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '' } : {}),
+            },
+        });
+
+        const finalUrl = new URL(response.url);
+        const type = response.headers.get('content-type') ?? '';
+        if (finalUrl.origin !== location.origin || !type.includes('text/html')) {
+            throw new Error('not-spa');
+        }
+
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        if (!doc.querySelector('main') || !doc.getElementById('site-header')) throw new Error('not-spa');
+
+        if (!response.ok) {
+            // Validation/auth/server errors: show message, keep the user where they are.
+            if (method !== 'GET') {
+                notify(response.status === 419 ? 'نشست شما منقضی شده است. صفحه را دوباره بارگذاری کنید.' : 'خطایی رخ داد. لطفاً دوباره تلاش کنید.', 'error');
+                progressDone();
+                return true;
+            }
+            throw new Error('not-spa');
+        }
+
+        const next = finalUrl.pathname + finalUrl.search;
+        const sameUrl = next === current;
+
+        if (push) {
+            history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
+            if (!sameUrl) history.pushState({ spa: true }, '', finalUrl.href + finalUrl.hash);
+        }
+
+        applyDocument(doc, { sameUrl });
+
+        if (restoreScroll !== null) {
+            window.scrollTo(0, restoreScroll);
+        } else if (!sameUrl) {
+            if (finalUrl.hash && document.querySelector(finalUrl.hash)) {
+                document.querySelector(finalUrl.hash).scrollIntoView();
+            } else {
+                window.scrollTo(0, 0);
+            }
+            const main = document.querySelector('main');
+            main.setAttribute('tabindex', '-1');
+            main.focus({ preventScroll: true });
+        }
+        progressDone();
+        return true;
+    } catch (error) {
+        if (error.name === 'AbortError') return true;
+        progressDone();
+        // GETs can safely fall back to a real navigation; writes were not applied.
+        if (method === 'GET') {
+            location.assign(url);
+        } else {
+            notify('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.', 'error');
+        }
+        return true;
+    }
+}
+
+function shouldHandleLink(a, e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+    if (a.target && a.target !== '_self') return false;
+    if (a.hasAttribute('download') || a.hasAttribute('data-no-spa') || a.rel.includes('external')) return false;
+    const url = new URL(a.href, location.href);
+    if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return false;
+    if (isFullReloadPath(url.pathname)) return false;
+    // Same page + hash: let the browser scroll.
+    if (url.hash && url.pathname === location.pathname && url.search === location.search) return false;
+    return true;
+}
+
+function initSpa() {
+    if (!window.fetch || !window.history?.pushState || !window.DOMParser) return;
+    history.scrollRestoration = 'manual';
+    history.replaceState({ spa: true, scrollY: window.scrollY }, '');
+
+    document.addEventListener('click', (e) => {
+        const a = e.target instanceof Element ? e.target.closest('a[href]') : null;
+        if (!a || !shouldHandleLink(a, e)) return;
+        e.preventDefault();
+        visit(a.href);
+    });
+
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (e.defaultPrevented || !(form instanceof HTMLFormElement) || form.hasAttribute('data-no-spa')) return;
+        if (form.target && form.target !== '_self') return;
+        if (form.enctype === 'multipart/form-data') return;
+
+        const action = new URL(e.submitter?.getAttribute('formaction') || form.action, location.href);
+        if (action.origin !== location.origin || isFullReloadPath(action.pathname)) return;
+
+        const data = new FormData(form, e.submitter);
+        const method = (e.submitter?.getAttribute('formmethod') || form.method || 'GET').toUpperCase();
+        e.preventDefault();
+
+        if (method === 'GET') {
+            const params = new URLSearchParams();
+            data.forEach((v, k) => typeof v === 'string' && params.append(k, v));
+            action.search = params.toString();
+            visit(action.href);
+            return;
+        }
+
+        if (form.dataset.busy) return;
+        form.dataset.busy = '1';
+        form.classList.add('opacity-60', 'pointer-events-none');
+        visit(action.href, { method: 'POST', body: data }).finally(() => {
+            // The form is usually replaced by the swap; clean up if it survived.
+            delete form.dataset.busy;
+            form.classList.remove('opacity-60', 'pointer-events-none');
+            form.querySelectorAll('.is-loading').forEach((b) => {
+                b.classList.remove('is-loading');
+                b.removeAttribute('aria-busy');
+                b.style.width = '';
+            });
+        });
+    });
+
+    window.addEventListener('popstate', (e) => {
+        visit(location.href, { push: false, restoreScroll: e.state?.scrollY ?? 0 });
+    });
+}
+
 /* ------------------------------------------------------------------
  * Boot
  * ------------------------------------------------------------------ */
@@ -236,6 +475,7 @@ function boot() {
     initFormLoading();
     initHeader();
     initBackToTop();
+    initSpa();
 }
 
 if (document.readyState === 'loading') {
