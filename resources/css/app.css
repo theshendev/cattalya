@@ -229,7 +229,15 @@
     }
 
     /* Route-level entrance for main content */
-    .page-enter { animation: none; }
+    .page-enter { animation: cat-fade-in .3s ease both; }
+    main:focus { outline: none; }
+
+    /* Top progress bar for in-page navigation */
+    #nav-progress {
+        position: fixed; top: 0; right: 0; left: 0; height: 3px; z-index: 110;
+        background: #8a6300; transform-origin: right center; transform: scaleX(0);
+        opacity: 0; pointer-events: none;
+    }
 
     /* Animated underline for nav links */
     .nav-link { position: relative; }

@@ -33,7 +33,7 @@
             <x-cattalya-logo />
         </a>
 
-        <nav class="flex items-center gap-11 text-sm text-[#6b6154]">
+        <nav id="desktop-nav" class="flex items-center gap-11 text-sm text-[#6b6154]">
             <a href="{{ route('home') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('home') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('home')) data-active @endif>صفحه اصلی</a>
             <a href="{{ route('products.index') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('products.*') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('products.*')) data-active @endif>محصولات</a>
             <a href="{{ route('about') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('about') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('about')) data-active @endif>درباره ما</a>
@@ -49,7 +49,7 @@
             <a href="{{ auth()->check() ? route('profile.show') : route('login') }}" class="press flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="حساب کاربری">
                 <img src="/icons/user.svg" alt="" class="h-5 w-5">
             </a>
-            <a href="{{ route('cart.index') }}" class="press relative flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="سبد خرید">
+            <a id="cart-link" href="{{ route('cart.index') }}" class="press relative flex h-10 w-10 items-center justify-center rounded-2xl border border-[#e3d2a0]" aria-label="سبد خرید">
                 <img src="/icons/cart.svg" alt="" class="h-5 w-5">
                 @if($cartCount > 0)
                     <span id="cart-count" data-count="{{ $cartCount }}" class="absolute -left-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#8a6300] text-[10px] text-white">{{ $cartCount }}</span>
