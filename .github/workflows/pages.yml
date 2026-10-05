@@ -1,0 +1,70 @@
+name: Deploy static demo to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite, mbstring, intl, gd, zip, bcmath
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          npm ci
+          npm run build
+
+      - name: Prepare app with demo data
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --seed --force
+
+      - name: Crawl the running app into static files
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 &
+          sleep 5
+          mkdir site
+          wget --recursive --level=inf --page-requisites --adjust-extension \
+            --convert-links --no-host-directories --directory-prefix=site \
+            --reject-regex '/(login|logout|cart|checkout|profile|wishlist|orders|payment|admin)' \
+            http://127.0.0.1:8000/ || test -f site/index.html
+          touch site/.nojekyll
+          cp site/index.html site/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
