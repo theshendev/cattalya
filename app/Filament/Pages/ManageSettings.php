@@ -34,6 +34,8 @@ class ManageSettings extends Page
             'instagram_url' => Setting::get('instagram_url'),
             'whatsapp_number' => Setting::get('whatsapp_number'),
             'free_shipping_threshold' => Setting::get('free_shipping_threshold', '12000000'),
+            'shipping_cost' => Setting::get('shipping_cost', '0'),
+            'gift_packaging_cost' => Setting::get('gift_packaging_cost', '0'),
         ];
 
         $this->form->fill($this->data);
@@ -61,7 +63,15 @@ class ManageSettings extends Page
                     Forms\Components\TextInput::make('free_shipping_threshold')
                         ->label('حد ارسال رایگان (تومن)')
                         ->numeric(),
-                ]),
+                    Forms\Components\TextInput::make('shipping_cost')
+                        ->label('هزینه ارسال (تومن)')
+                        ->numeric()
+                        ->default(0),
+                    Forms\Components\TextInput::make('gift_packaging_cost')
+                        ->label('هزینه بسته‌بندی هدیه (تومن)')
+                        ->numeric()
+                        ->default(0),
+                ])->columns(3),
             ])
             ->statePath('data');
     }

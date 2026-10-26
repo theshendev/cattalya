@@ -64,6 +64,17 @@ class OrderResource extends Resource
                 Infolists\Components\TextEntry::make('total_amount')
                     ->label('مبلغ کل')
                     ->formatStateUsing(fn ($state) => number_format($state).' تومن'),
+                Infolists\Components\TextEntry::make('discount_amount')
+                    ->label('تخفیف')
+                    ->formatStateUsing(fn ($state, Order $record) => number_format($state).' تومن'.($record->coupon_code ? " ({$record->coupon_code})" : '')),
+                Infolists\Components\TextEntry::make('shipping_cost')
+                    ->label('هزینه ارسال / بسته‌بندی')
+                    ->formatStateUsing(fn ($state, Order $record) => number_format($state).' / '.number_format($record->packaging_cost).' تومن'),
+                Infolists\Components\TextEntry::make('gift_message')
+                    ->label('هدیه')
+                    ->visible(fn (Order $record) => $record->is_gift)
+                    ->formatStateUsing(fn ($state) => $state ?: 'بدون متن'),
+                Infolists\Components\TextEntry::make('notes')->label('یادداشت مشتری')->placeholder('—'),
                 Infolists\Components\TextEntry::make('gold_price_snapshot')
                     ->label('قیمت طلا در زمان ثبت')
                     ->formatStateUsing(fn ($state) => number_format($state).' تومن/گرم'),
@@ -72,12 +83,14 @@ class OrderResource extends Resource
             ])->columns(2),
 
             Infolists\Components\Section::make('آدرس تحویل')->schema([
-                Infolists\Components\TextEntry::make('address.receiver_name')->label('نام گیرنده'),
-                Infolists\Components\TextEntry::make('address.phone')->label('تلفن'),
-                Infolists\Components\TextEntry::make('address.province')->label('استان'),
-                Infolists\Components\TextEntry::make('address.city')->label('شهر'),
-                Infolists\Components\TextEntry::make('address.address')->label('آدرس')->columnSpanFull(),
-                Infolists\Components\TextEntry::make('address.postal_code')->label('کد پستی'),
+                Infolists\Components\TextEntry::make('shipping_address.receiver_name')->label('نام گیرنده'),
+                Infolists\Components\TextEntry::make('shipping_address.phone')->label('تلفن'),
+                Infolists\Components\TextEntry::make('shipping_address.province')->label('استان'),
+                Infolists\Components\TextEntry::make('shipping_address.city')->label('شهر'),
+                Infolists\Components\TextEntry::make('shipping_address.address')->label('آدرس')->columnSpanFull(),
+                Infolists\Components\TextEntry::make('shipping_address.plaque')->label('پلاک')->placeholder('—'),
+                Infolists\Components\TextEntry::make('shipping_address.unit')->label('واحد')->placeholder('—'),
+                Infolists\Components\TextEntry::make('shipping_address.postal_code')->label('کد پستی'),
             ])->columns(2),
 
             Infolists\Components\Section::make('اقلام سفارش')->schema([

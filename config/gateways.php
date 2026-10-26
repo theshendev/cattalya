@@ -54,6 +54,7 @@ return [
         'zarinpal' => [
             'enabled' => env('ZARINPAL_ENABLED', true),
             'label' => 'زرین‌پال',
+            'description' => 'پرداخت آنلاین با تمامی کارت‌های بانکی',
             'merchant_id' => env('ZARINPAL_MERCHANT_ID', ''),
             'sandbox' => env('ZARINPAL_SANDBOX', true),
 
@@ -85,6 +86,7 @@ return [
         'idpay' => [
             'enabled' => env('IDPAY_ENABLED', true),
             'label' => 'آیدی‌پی',
+            'description' => 'پرداخت آنلاین با تمامی کارت‌های بانکی',
             'api_key' => env('IDPAY_API_KEY', ''),
             'sandbox' => env('IDPAY_SANDBOX', true),
 
@@ -105,6 +107,7 @@ return [
         'digipay' => [
             'enabled' => env('DIGIPAY_ENABLED', true),
             'label' => 'دیجی‌پی',
+            'description' => 'پرداخت با کارت بانکی، کیف پول یا اعتبار دیجی‌پی',
             'client_id' => env('DIGIPAY_CLIENT_ID', ''),
             'client_secret' => env('DIGIPAY_CLIENT_SECRET', ''),
             'username' => env('DIGIPAY_USERNAME', ''),
@@ -123,6 +126,34 @@ return [
                 'live' => 'https://api.mydigipay.com/digipay/api',
                 'sandbox' => 'https://uat.mydigipay.info/digipay/api',
             ],
+        ],
+
+        /*
+        | SnappPay (اسنپ‌پی) — instalment / buy-now-pay-later.
+        |
+        | The merchant spec is issued by SnappPay after the contract is signed;
+        | request base_url, username, password, client_id and client_secret from
+        | your SnappPay account manager (there is no public sandbox signup).
+        | Auth: OAuth2 password grant, client_id:client_secret as HTTP Basic.
+        |
+        | min_amount / max_amount are the instalment window in Tomans from
+        | your contract (0 = no limit). Outside it SnappPay is hidden at
+        | checkout. auto_settle verifies and settles in one go — SnappPay
+        | reverts a payment that is verified but never settled.
+        */
+        'snapppay' => [
+            'enabled' => env('SNAPPPAY_ENABLED', false),
+            'label' => 'اسنپ‌پی',
+            'description' => 'پرداخت اقساطی؛ همین حالا بخرید، بعداً پرداخت کنید',
+            'base_url' => env('SNAPPPAY_BASE_URL', ''),
+            'username' => env('SNAPPPAY_USERNAME', ''),
+            'password' => env('SNAPPPAY_PASSWORD', ''),
+            'client_id' => env('SNAPPPAY_CLIENT_ID', ''),
+            'client_secret' => env('SNAPPPAY_CLIENT_SECRET', ''),
+            'scope' => env('SNAPPPAY_SCOPE', 'online-merchant'),
+            'auto_settle' => env('SNAPPPAY_AUTO_SETTLE', true),
+            'min_amount' => (int) env('SNAPPPAY_MIN_AMOUNT', 0),
+            'max_amount' => (int) env('SNAPPPAY_MAX_AMOUNT', 0),
         ],
 
     ],

@@ -6,19 +6,17 @@
 
 {{-- Hero Banner --}}
 <section class="px-4 md:px-20 pt-6 md:pt-8">
-    <div class="relative rounded-2xl md:rounded-3xl overflow-hidden h-52 sm:h-72 md:h-[405px] bg-[#263a3b] group animate-scale-in">
+    <div class="relative rounded-2xl md:rounded-3xl overflow-hidden h-[300px] sm:h-72 md:h-[405px] bg-[#263a3b] group animate-scale-in">
         @if($heroBanner?->getFirstMediaUrl('image'))
         <img src="{{ $heroBanner->getFirstMediaUrl('image') }}"
              alt="{{ $heroBanner->title }}"
              class="absolute inset-0 w-full h-full object-cover opacity-70 scale-105 group-hover:scale-100 transition-transform duration-[1.2s] ease-out">
         @else
-        <div class="absolute -bottom-20 -left-10 size-64 rounded-full border-[18px] border-[#c8960c] opacity-80 md:-bottom-40 md:left-10 md:size-[430px] md:border-[32px]"></div>
-        <div class="absolute bottom-2 left-12 flex size-24 rotate-45 items-center justify-center border-4 border-[#93dff0] bg-[#60c4e7] shadow-[0_0_35px_rgb(96_196_231_/_0.7)] md:bottom-12 md:left-48 md:size-36">
-            <div class="size-16 border border-white/70 md:size-24"></div>
-        </div>
+        <img src="/images/cattalya-emblem.png" alt="" aria-hidden="true"
+             class="absolute -bottom-4 left-1/2 h-[58%] w-auto max-w-none -translate-x-1/2 select-none object-contain sm:h-[115%] sm:-bottom-6 sm:left-0 sm:translate-x-0 md:left-4 md:h-[130%]">
         @endif
         <div class="absolute inset-0 bg-gradient-to-l from-black/35 via-transparent to-black/10"></div>
-        <div class="absolute inset-0 flex items-center">
+        <div class="absolute inset-0 flex items-start pt-6 sm:items-center sm:pt-0">
             <div class="ml-auto mr-4 max-w-xs px-4 text-right text-[#fcfde3] md:mr-20 md:max-w-xl md:px-0">
                 <h1 class="text-2xl sm:text-4xl md:text-6xl font-bold leading-tight mb-2 md:mb-4 animate-fade-up" style="animation-delay:.1s">
                     {{ $heroBanner?->title ?? 'به کاتالیا خوش اومدید' }}
@@ -47,7 +45,7 @@
             ['icon' => 'shield',  'title' => 'ضمانت اصالت کالا',          'sub' => 'ارائه فاکتور رسمی و قابل استناد'],
         ] as $feature)
         {{-- icon first in DOM → RTL flex places it on the RIGHT --}}
-        <div data-reveal class="group flex items-center gap-2 md:gap-3 bg-[#f9f6f3] rounded-2xl p-3 md:p-4 md:m-2 transition-colors duration-300 hover:bg-[#fdeee0]">
+        <div data-reveal class="group flex items-center gap-2 md:gap-3 rounded-2xl p-3 md:p-4 md:m-2 transition-colors duration-300 hover:bg-[#fdeee0]">
             <div class="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center shrink-0">
                 <img src="/icons/{{ $feature['icon'] }}.svg" alt="" class="w-6 h-6 md:w-8 md:h-8 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
             </div>
@@ -62,14 +60,6 @@
 
 {{-- Categories --}}
 <section class="px-4 md:px-20 mt-10 md:mt-14">
-    <div class="flex items-center justify-between mb-5 md:mb-8">
-        {{-- h2 first → RIGHT in RTL; link second → LEFT in RTL --}}
-        <h2 data-reveal class="text-lg md:text-xl font-bold text-[#2b2620]">دسته‌بندی‌ها</h2>
-        <a href="{{ route('products.index') }}" data-reveal class="group flex items-center gap-2 text-xs text-[#b08000] font-medium hover:underline">
-            <img src="/icons/arrow-left.svg" alt="" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1">
-            مشاهده همه
-        </a>
-    </div>
     <div data-reveal-stagger="70" class="flex items-center gap-3 md:gap-5 overflow-x-auto pb-2 md:pb-0 md:justify-between scrollbar-hide">
         @forelse($categories as $cat)
         <a href="{{ route('products.index', ['category' => $cat->slug]) }}"
@@ -94,24 +84,7 @@
 </section>
 
 {{-- Newest Products --}}
-<section class="mt-10 md:mt-14">
-    <div class="flex items-center justify-between px-4 md:px-20 mb-5 md:mb-6">
-        <h2 data-reveal class="text-lg md:text-xl font-bold text-[#2b2620]">جدیدترین محصولات</h2>
-        <a href="{{ route('products.index') }}" data-reveal class="group flex items-center gap-2 text-xs text-[#b08000] font-medium hover:underline">
-            <img src="/icons/arrow-left.svg" alt="" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1">
-            مشاهده همه
-        </a>
-    </div>
-    <div class="px-4 md:px-20">
-        <div data-reveal-stagger="60" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-5">
-            @forelse($newestProducts as $product)
-            <x-product-card :product="$product" />
-            @empty
-            <p class="col-span-4 text-center text-[#a8a096] py-10">محصولی یافت نشد.</p>
-            @endforelse
-        </div>
-    </div>
-</section>
+<x-product-carousel title="جدیدترین محصولات" :products="$newestProducts" :link="route('products.index', ['sort' => 'newest'])" />
 
 {{-- Promo Banners --}}
 <section class="px-4 md:px-20 mt-10 md:mt-14 flex flex-col sm:flex-row gap-4 md:gap-5">
@@ -131,11 +104,8 @@
         @endif
     </a>
     @else
-    <a href="{{ route('products.index', ['category' => 'bracelet']) }}" data-reveal class="group relative block h-32 flex-1 overflow-hidden rounded-2xl bg-[linear-gradient(110deg,#c99d75_0%,#f0d6ba_46%,#f7ead8_100%)] shadow-sm transition-shadow duration-500 hover:shadow-2xl sm:h-[263px]">
-        <div class="absolute -left-8 top-1/2 h-12 w-56 -translate-y-1/2 rotate-12 rounded-full border-[9px] border-[#d4aa45] bg-[#9c6043] shadow-xl transition-transform duration-500 group-hover:rotate-6 md:h-16 md:w-72"></div>
-        <div class="absolute inset-0 flex items-center justify-end px-6 text-right text-[#3f352d] md:px-10">
-            <div><p class="text-xl font-black md:text-3xl">کالکشن</p><p class="text-lg font-bold md:text-2xl">نقره مردانه</p></div>
-        </div>
+    <a href="{{ route('products.index') }}" data-reveal class="group relative block h-44 flex-1 overflow-hidden rounded-2xl shadow-sm transition-shadow duration-500 hover:shadow-2xl sm:h-[263px]">
+        <img src="/images/promo-silver-men.png" alt="کالکشن نقره مردانه" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
     </a>
     @endif
     @if($promoRight)
@@ -154,31 +124,13 @@
         @endif
     </a>
     @else
-    <a href="{{ route('products.index', ['category' => 'bracelet']) }}" data-reveal class="group relative block h-32 flex-1 overflow-hidden rounded-2xl bg-[linear-gradient(110deg,#f7ead8_0%,#f0d6ba_54%,#bd8665_100%)] shadow-sm transition-shadow duration-500 hover:shadow-2xl sm:h-[263px]">
-        <div class="absolute -right-8 top-1/2 h-12 w-56 -translate-y-1/2 -rotate-12 rounded-full border-[9px] border-[#d4aa45] bg-[#9c6043] shadow-xl transition-transform duration-500 group-hover:-rotate-6 md:h-16 md:w-72"></div>
-        <div class="absolute inset-0 flex items-center justify-start px-6 text-right text-[#3f352d] md:px-10">
-            <div><p class="text-xl font-black md:text-3xl">کالکشن</p><p class="text-lg font-bold md:text-2xl">نقره زنانه</p></div>
-        </div>
+    <a href="{{ route('products.index') }}" data-reveal class="group relative block h-44 flex-1 overflow-hidden rounded-2xl shadow-sm transition-shadow duration-500 hover:shadow-2xl sm:h-[263px]">
+        <img src="/images/promo-silver-women.png" alt="کالکشن نقره زنانه" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105">
     </a>
     @endif
 </section>
 
 {{-- Featured Products --}}
-<section class="mt-10 md:mt-14">
-    <div class="flex items-center justify-between px-4 md:px-20 mb-5 md:mb-6">
-        <h2 data-reveal class="text-lg md:text-xl font-bold text-[#2b2620]">محصولات پیشنهادی</h2>
-        <a href="{{ route('products.index') }}" data-reveal class="group flex items-center gap-2 text-xs text-[#b08000] font-medium hover:underline">
-            <img src="/icons/arrow-left.svg" alt="" class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1">
-            مشاهده همه
-        </a>
-    </div>
-    <div class="px-4 md:px-20">
-        <div data-reveal-stagger="60" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-5">
-            @foreach($featuredProducts as $product)
-            <x-product-card :product="$product" />
-            @endforeach
-        </div>
-    </div>
-</section>
+<x-product-carousel title="محصولات پیشنهادی" :products="$featuredProducts" :link="route('products.index')" />
 
 @endsection

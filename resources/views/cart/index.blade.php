@@ -2,40 +2,31 @@
 @section('title', 'سبد خرید')
 
 @section('content')
-<div class="hidden min-h-[calc(100vh-112px)] px-20 py-16 md:block" aria-hidden="true">
-    <div class="relative h-[500px] overflow-hidden rounded-3xl bg-[#1c3536]">
-        <div class="absolute -bottom-44 -left-10 size-[480px] rounded-full border-[34px] border-[#c8960c]"></div>
-        <div class="absolute bottom-28 left-48 size-32 rotate-45 border-4 border-[#b9f1ff] bg-[#60c4e7]"></div>
-        <div class="absolute inset-y-0 right-24 flex items-center text-right text-[#fcfde3]"><p class="text-6xl font-bold leading-tight">درخشش ابدی،<br>زیبایی جاودان.</p></div>
+<div class="px-4 py-6 md:px-20 md:py-8">
+    <x-checkout-stepper :step="1" />
+
+    @if($items->isEmpty())
+    <div class="mt-5 flex flex-col items-center gap-5 rounded-3xl bg-white px-6 py-20 text-center animate-fade-up">
+        <div class="flex size-20 items-center justify-center rounded-full bg-[#f9f6f3]">
+            <img src="/icons/cart.svg" alt="" class="size-9 opacity-50">
+        </div>
+        <div>
+            <p class="text-lg font-bold text-[#2b2620]">سبد خرید شما خالی است</p>
+            <p class="mt-2 text-sm text-[#a8a096]">محصول مورد علاقه‌تان را به سبد اضافه کنید.</p>
+        </div>
+        <a href="{{ route('products.index') }}" class="press rounded-2xl bg-[#111] px-8 py-3 text-sm text-white">مشاهده محصولات</a>
     </div>
-</div>
-
-<div class="fixed inset-0 z-[70] bg-black/45" role="dialog" aria-modal="true" aria-labelledby="cart-title">
-    <a href="{{ route('home') }}" class="absolute inset-0" aria-label="بستن سبد خرید"></a>
-
-    <aside class="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-[30px] bg-white shadow-2xl md:inset-y-0 md:left-0 md:right-auto md:max-h-none md:w-[430px] md:rounded-none">
-        <span class="mx-auto mt-3 block h-1 w-10 shrink-0 rounded-full bg-[#aaa197] md:hidden"></span>
-        <header class="flex shrink-0 items-center justify-between border-b border-[#f0e6c8] px-5 py-5 md:px-7">
-            <div class="flex items-center gap-2">
-                <h1 id="cart-title" class="text-xl font-bold">خلاصه سبد خرید</h1>
+    @else
+    <div class="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_325px]">
+        <section class="rounded-3xl bg-white p-5 md:p-6">
+            <div class="flex items-center gap-2 text-right">
+                <h1 class="text-lg font-bold text-[#2b2620] md:text-xl">خلاصه سبد خرید</h1>
                 <span class="text-xs text-[#a8a096]">({{ $items->sum('quantity') }} کالا)</span>
             </div>
-            <a href="{{ route('home') }}" class="flex size-8 items-center justify-center rounded-full border border-[#2b2620] text-lg" aria-label="بستن">×</a>
-        </header>
 
-        @if($items->isEmpty())
-        <div class="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-16 text-center">
-            <div class="flex size-20 items-center justify-center rounded-full bg-[#f9f6f3]">
-                <img src="/icons/cart.svg" alt="" class="size-9 opacity-50">
-            </div>
-            <div><p class="text-lg font-bold">سبد خرید شما خالی است</p><p class="mt-2 text-sm text-[#a8a096]">محصول مورد علاقه‌تان را به سبد اضافه کنید.</p></div>
-            <a href="{{ route('products.index') }}" class="press rounded-2xl bg-[#111] px-8 py-3 text-sm text-white">مشاهده محصولات</a>
-        </div>
-        @else
-        <div class="flex-1 overflow-y-auto px-5 py-3 md:px-7">
-            @foreach($items as $item)
-            <article class="border-b border-[#f0e6c8] py-5 last:border-0">
-                <div class="flex items-start gap-3">
+            <div class="mt-4 divide-y divide-[#f0e6c8]">
+                @foreach($items as $item)
+                <article class="flex flex-wrap items-center gap-4 py-5 md:flex-nowrap">
                     <a href="{{ route('products.show', $item['slug']) }}" class="size-20 shrink-0 overflow-hidden rounded-2xl bg-[#f9f6f3]">
                         @if($item['image'])
                         <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover">
@@ -43,40 +34,41 @@
                         <x-jewelry-placeholder />
                         @endif
                     </a>
+
                     <div class="min-w-0 flex-1 text-right">
-                        <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm font-medium leading-6">{{ $item['name'] }}</a>
-                        <p class="mt-2 text-xs text-[#a8a096] line-through">{{ number_format($item['unit_price'] * 1.04) }} تومان</p>
-                        <p class="text-sm font-bold">{{ number_format($item['unit_price']) }} تومان</p>
+                        <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm font-medium leading-6 text-[#2b2620] md:text-base">{{ $item['name'] }}</a>
                     </div>
-                </div>
 
-                <div class="mt-4 flex items-center justify-between">
-                    <form method="POST" action="{{ route('cart.remove', $item['product_id']) }}" data-no-loading>
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-400">حذف</button>
-                    </form>
-                    <form method="POST" action="{{ route('cart.update', $item['product_id']) }}" class="flex items-center overflow-hidden rounded-2xl border border-[#ead69e]" data-no-loading>
-                        @csrf @method('PATCH')
-                        <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="flex size-9 items-center justify-center text-xl text-[#c8960c]">+</button>
-                        <span class="flex size-9 items-center justify-center border-x border-[#f0e6c8] text-sm">{{ $item['quantity'] }}</span>
-                        <button type="submit" name="quantity" value="{{ $item['quantity'] - 1 }}" class="flex size-9 items-center justify-center text-xl text-red-400">−</button>
-                    </form>
-                </div>
-            </article>
-            @endforeach
-        </div>
+                    <span class="rounded-lg bg-[#e6f6ec] px-3 py-1.5 text-xs font-medium text-[#1a7f3c]">آماده ارسال</span>
 
-        <footer class="shrink-0 border-t border-[#f0e6c8] bg-white px-5 pb-6 pt-5 md:px-7">
-            <div class="mb-5 flex items-end justify-between">
-                <span class="text-sm text-[#6b6154]">قیمت نهایی:</span>
-                <div class="text-left"><p class="text-xs text-[#a8a096] line-through">{{ number_format($total * 1.04) }} تومان</p><p class="text-lg font-black">{{ number_format($total) }} تومان</p></div>
+                    <div class="min-w-28 text-right md:text-left">
+                        <p class="text-sm font-bold text-[#2b2620]">{{ number_format($item['unit_price']) }} <span class="text-xs font-normal">تومان</span></p>
+                        @if($item['quantity'] > 1)
+                        <p class="text-xs text-[#a8a096]">مجموع: {{ number_format($item['total_price']) }}</p>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <form method="POST" action="{{ route('cart.update', $item['product_id']) }}" class="flex items-center overflow-hidden rounded-2xl border border-[#ead69e]" data-no-loading>
+                            @csrf @method('PATCH')
+                            <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="flex size-9 items-center justify-center text-xl text-[#c8960c]" aria-label="افزایش تعداد">+</button>
+                            <span class="flex size-9 items-center justify-center border-x border-[#f0e6c8] text-sm">{{ $item['quantity'] }}</span>
+                            <button type="submit" name="quantity" value="{{ $item['quantity'] - 1 }}" class="flex size-9 items-center justify-center text-xl text-red-400" aria-label="کاهش تعداد">−</button>
+                        </form>
+                        <form method="POST" action="{{ route('cart.remove', $item['product_id']) }}" data-no-loading>
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-xs text-red-400 hover:underline">حذف</button>
+                        </form>
+                    </div>
+                </article>
+                @endforeach
             </div>
-            <div class="grid gap-2">
-                <a href="{{ route('cart.index') }}" class="press flex h-12 items-center justify-center rounded-2xl border border-[#111] text-sm">مشاهده سبد خرید</a>
-                <a href="{{ route('checkout.index') }}" class="press flex h-12 items-center justify-center rounded-2xl bg-[#111] text-sm text-white">تسویه حساب</a>
-            </div>
-        </footer>
-        @endif
-    </aside>
+        </section>
+
+        <x-invoice-summary :quote="$quote" :show-shipping="false">
+            <a href="{{ route('checkout.index') }}" class="press flex h-12 w-full items-center justify-center rounded-2xl bg-[#111] text-sm font-medium text-white hover:bg-[#2b2620]">تایید و ادامه</a>
+        </x-invoice-summary>
+    </div>
+    @endif
 </div>
 @endsection

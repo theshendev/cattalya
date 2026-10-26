@@ -21,7 +21,7 @@ $st = $statusMap[$order->status] ?? ['label' => $order->status, 'color' => 'text
         <span class="text-xs md:text-sm font-medium px-3 md:px-4 py-1.5 md:py-2 rounded-full border {{ $st['color'] }} {{ $order->status === 'pending' ? 'animate-pulse' : '' }}">{{ $st['label'] }}</span>
         <div class="text-right">
             <h1 class="text-xl md:text-2xl font-bold text-[#2b2620]">سفارش #{{ $order->id }}</h1>
-            <p class="text-xs md:text-sm text-[#a8a096] mt-1">{{ $order->created_at->format('Y/m/d H:i') }}</p>
+            <p class="text-xs md:text-sm text-[#a8a096] mt-1">{{ \App\Support\Jalali::formatLong($order->created_at) }} — {{ $order->created_at->format('H:i') }}</p>
         </div>
     </div>
 
@@ -44,6 +44,12 @@ $st = $statusMap[$order->status] ?? ['label' => $order->status, 'color' => 'text
                 </div>
                 @endforeach
             </div>
+            <dl class="mt-3 flex flex-col gap-2 border-t border-[#f0e6c8] pt-3 text-sm text-[#6b6154] md:mt-4 md:pt-4">
+                <div class="flex justify-between"><dt>جمع کالاها</dt><dd>{{ number_format($order->subtotal_amount) }} تومان</dd></div>
+                @if($order->discount_amount > 0)<div class="flex justify-between text-[#1f7a8c]"><dt>تخفیف{{ $order->coupon_code ? ' ('.$order->coupon_code.')' : '' }}</dt><dd>{{ number_format($order->discount_amount) }} تومان</dd></div>@endif
+                <div class="flex justify-between"><dt>هزینه ارسال</dt><dd>{{ $order->shipping_cost > 0 ? number_format($order->shipping_cost).' تومان' : 'رایگان' }}</dd></div>
+                @if($order->packaging_cost > 0)<div class="flex justify-between"><dt>هزینه بسته‌بندی</dt><dd>{{ number_format($order->packaging_cost) }} تومان</dd></div>@endif
+            </dl>
             <div class="border-t border-[#f0e6c8] mt-3 md:mt-4 pt-3 md:pt-4 flex items-center justify-between">
                 <span class="text-lg md:text-xl font-bold text-[#2b2620]">{{ number_format($order->total_amount) }} تومان</span>
                 <span class="font-bold text-[#6b6154]">جمع کل</span>
@@ -51,16 +57,20 @@ $st = $statusMap[$order->status] ?? ['label' => $order->status, 'color' => 'text
         </div>
 
         {{-- Delivery Address --}}
+        @php $shipTo = $order->shipping_address ?? []; @endphp
         <div data-reveal class="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6">
             <h2 class="font-bold text-[#2b2620] text-right mb-4">آدرس تحویل</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-sm text-right">
-                <div><span class="text-[#a8a096]">گیرنده: </span><span class="text-[#2b2620] font-medium">{{ $order->address['receiver_name'] }}</span></div>
-                <div><span class="text-[#a8a096]">تلفن: </span><span class="text-[#2b2620] font-medium" dir="ltr">{{ $order->address['phone'] }}</span></div>
-                <div><span class="text-[#a8a096]">استان: </span><span class="text-[#2b2620] font-medium">{{ $order->address['province'] }}</span></div>
-                <div><span class="text-[#a8a096]">شهر: </span><span class="text-[#2b2620] font-medium">{{ $order->address['city'] }}</span></div>
-                <div class="col-span-1 sm:col-span-2"><span class="text-[#a8a096]">آدرس: </span><span class="text-[#2b2620] font-medium">{{ $order->address['address'] }}</span></div>
-                <div><span class="text-[#a8a096]">کد پستی: </span><span class="text-[#2b2620] font-medium" dir="ltr">{{ $order->address['postal_code'] }}</span></div>
+                <div><span class="text-[#a8a096]">گیرنده: </span><span class="text-[#2b2620] font-medium">{{ $shipTo['receiver_name'] ?? '—' }}</span></div>
+                <div><span class="text-[#a8a096]">تلفن: </span><span class="text-[#2b2620] font-medium" dir="ltr">{{ $shipTo['phone'] ?? '—' }}</span></div>
+                <div><span class="text-[#a8a096]">استان: </span><span class="text-[#2b2620] font-medium">{{ $shipTo['province'] ?? '—' }}</span></div>
+                <div><span class="text-[#a8a096]">شهر: </span><span class="text-[#2b2620] font-medium">{{ $shipTo['city'] ?? '—' }}</span></div>
+                <div class="col-span-1 sm:col-span-2"><span class="text-[#a8a096]">آدرس: </span><span class="text-[#2b2620] font-medium">{{ $shipTo['address'] ?? '—' }}@if(! empty($shipTo['plaque']))، پلاک {{ $shipTo['plaque'] }}@endif @if(! empty($shipTo['unit']))، واحد {{ $shipTo['unit'] }}@endif</span></div>
+                <div><span class="text-[#a8a096]">کد پستی: </span><span class="text-[#2b2620] font-medium" dir="ltr">{{ $shipTo['postal_code'] ?? '—' }}</span></div>
             </div>
+            @if($order->is_gift)
+            <p class="mt-4 rounded-xl bg-[#fdeee0] px-4 py-3 text-right text-sm text-[#a34d06]">ارسال به عنوان هدیه@if($order->gift_message): «{{ $order->gift_message }}»@endif</p>
+            @endif
         </div>
 
         {{-- Payment Info --}}

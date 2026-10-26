@@ -9,6 +9,7 @@ use App\Services\Payment\DTOs\PaymentResponse;
 use App\Services\Payment\DTOs\VerifyResponse;
 use App\Services\Payment\Gateways\DigiPayGateway;
 use App\Services\Payment\Gateways\IDPayGateway;
+use App\Services\Payment\Gateways\SnappPayGateway;
 use App\Services\Payment\Gateways\ZarinPalGateway;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class PaymentService
         'zarinpal' => ZarinPalGateway::class,
         'idpay' => IDPayGateway::class,
         'digipay' => DigiPayGateway::class,
+        'snapppay' => SnappPayGateway::class,
     ];
 
     public function driver(string $gateway): PaymentGateway
@@ -56,11 +58,15 @@ class PaymentService
      *
      * @return array<string, string>
      */
-    public function gatewayOptions(): array
+    public function gatewayOptions(?float $amount = null): array
     {
         $options = [];
 
         foreach ($this->availableGateways() as $name) {
+            if ($amount !== null && ! $this->driver($name)->supportsAmount($amount)) {
+                continue;
+            }
+
             $options[$name] = config("gateways.drivers.{$name}.label", $name);
         }
 
@@ -158,7 +164,7 @@ class PaymentService
 
                 // Only advance an order that is still awaiting payment.
                 if ($payment->order->status === 'pending') {
-                    $payment->order->update(['status' => 'paid']);
+                    $payment->order->markAsPaid();
                 }
             } else {
                 $payment->status = Payment::STATUS_FAILED;

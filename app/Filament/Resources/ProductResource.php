@@ -53,6 +53,23 @@ class ProductResource extends Resource
                     ->columnSpanFull(),
             ])->columns(2),
 
+            Forms\Components\Section::make('مشخصات ظاهری')->schema([
+                Forms\Components\TextInput::make('karat')
+                    ->label('عیار')
+                    ->numeric()
+                    ->default(18)
+                    ->required(),
+                Forms\Components\TextInput::make('gold_color')
+                    ->label('رنگ طلا')
+                    ->placeholder('طلای زرد'),
+                Forms\Components\TextInput::make('shine')
+                    ->label('درخشندگی')
+                    ->placeholder('براق'),
+                Forms\Components\TextInput::make('dimensions')
+                    ->label('ابعاد تقریبی')
+                    ->placeholder('12*12 سانتی‌متر'),
+            ])->columns(2),
+
             Forms\Components\Section::make('قیمت‌گذاری')->schema([
                 Forms\Components\Toggle::make('is_fixed_price')
                     ->label('قیمت ثابت')

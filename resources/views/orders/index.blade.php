@@ -2,54 +2,54 @@
 @section('title', 'سفارش‌های من')
 
 @section('content')
-<div class="px-4 md:px-20 py-6 md:py-10">
-    <h1 class="text-xl md:text-2xl font-bold text-[#2b2620] text-right mb-6 md:mb-8 animate-fade-up">سفارش‌های من</h1>
+@php use App\Support\Jalali; @endphp
+<section class="px-4 py-6 md:px-20 md:py-8">
+    <div class="flex flex-col-reverse gap-5 lg:flex-row-reverse lg:items-start">
+        <div class="w-full rounded-3xl bg-white p-5 md:p-7">
+            <h1 class="mb-5 flex items-center justify-start gap-2 text-lg font-bold text-[#2b2620]">
+                <img src="/icons/cart.svg" alt="" class="size-6"> سفارش‌ها
+            </h1>
 
-    @if($orders->isEmpty())
-    <div class="text-center py-16 md:py-24 text-[#a8a096] animate-fade-up">
-        <svg class="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 opacity-30 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <p class="text-lg md:text-xl font-medium">هنوز سفارشی ثبت نکرده‌اید</p>
-        <a href="{{ route('products.index') }}"
-           class="press inline-block mt-4 bg-[#8a6300] text-white px-8 py-3 rounded-2xl font-medium hover:bg-[#6b4d00] hover:shadow-xl hover:shadow-[#8a6300]/25">
-            شروع خرید
-        </a>
-    </div>
-    @else
-    <div data-reveal-stagger="70" class="flex flex-col gap-3 md:gap-4">
-        @foreach($orders as $order)
-        @php
-        $statusMap = [
-            'pending'    => ['label' => 'در انتظار پرداخت', 'color' => 'text-amber-600 bg-amber-50'],
-            'paid'       => ['label' => 'پرداخت شده',       'color' => 'text-blue-600 bg-blue-50'],
-            'processing' => ['label' => 'در حال پردازش',    'color' => 'text-purple-600 bg-purple-50'],
-            'shipped'    => ['label' => 'ارسال شده',         'color' => 'text-indigo-600 bg-indigo-50'],
-            'delivered'  => ['label' => 'تحویل داده شده',   'color' => 'text-green-600 bg-green-50'],
-            'cancelled'  => ['label' => 'لغو شده',           'color' => 'text-red-600 bg-red-50'],
-        ];
-        $st = $statusMap[$order->status] ?? ['label' => $order->status, 'color' => 'text-gray-600 bg-gray-50'];
-        @endphp
-        <a href="{{ route('orders.show', $order) }}"
-           data-reveal
-           class="group bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 flex items-center justify-between gap-3 border border-transparent hover:border-[#f0e6c8] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-            <div class="flex items-center gap-3 text-xs md:text-sm text-[#6b6154]">
-                <span class="hidden sm:inline">{{ $order->created_at->diffForHumans() }}</span>
-                <span>{{ $order->items->count() }} کالا</span>
+            @if($orders->isEmpty())
+            <div class="flex min-h-64 flex-col items-center justify-center gap-4 text-center">
+                <img src="/icons/cart.svg" alt="" class="size-10 opacity-40">
+                <p class="text-sm text-[#6b6154]">هنوز سفارشی ثبت نکرده‌اید.</p>
+                <a href="{{ route('products.index') }}" class="press rounded-2xl bg-[#111] px-6 py-3 text-sm text-white">شروع خرید</a>
             </div>
-            <div class="flex items-center gap-3 md:gap-6 text-right">
-                <span class="text-xs font-medium px-2 md:px-3 py-1 rounded-full {{ $st['color'] }} whitespace-nowrap">{{ $st['label'] }}</span>
-                <div>
-                    <p class="font-bold text-[#2b2620] text-sm md:text-base transition-colors duration-200 group-hover:text-[#8a6300]">{{ number_format($order->total_amount) }} <span class="text-xs font-normal text-[#a8a096]">تومان</span></p>
-                    <p class="text-xs text-[#a8a096]">سفارش #{{ $order->id }}</p>
-                </div>
+            @else
+            <div class="flex flex-col gap-4">
+                @foreach($orders as $order)
+                <a href="{{ route('orders.show', $order) }}" class="group block rounded-2xl border border-[#f0e6c8] p-4 transition-colors hover:border-[#8a6300]">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0e6c8] pb-3">
+                        <p class="flex items-center gap-2 font-bold text-[#2b2620]">
+                            <img src="/icons/gift.svg" alt="" class="size-5"> سفارش {{ $order->id }}
+                            <span class="rounded-lg px-2 py-0.5 text-xs font-normal {{ $order->status === 'pending' ? 'bg-[#fdeee0] text-[#a34d06]' : 'bg-[#e6f6ec] text-[#1a7f3c]' }}">{{ $order->statusLabel() }}</span>
+                        </p>
+                        <p class="text-xs text-[#a8a096]">
+                            {{ Jalali::formatLong($order->created_at) }} <span class="mx-1">|</span> مبلغ
+                            <strong class="text-[#2b2620]">{{ number_format($order->total_amount) }} تومان</strong>
+                        </p>
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-3">
+                        @foreach($order->items as $item)
+                        @php $image = $item->product?->getFirstMediaUrl('images', 'thumb') ?: $item->product?->getFirstMediaUrl('images'); @endphp
+                        <span class="size-20 overflow-hidden rounded-2xl bg-[#f9f6f3]" title="{{ $item->product_name }}">
+                            @if($image)
+                            <img src="{{ $image }}" alt="{{ $item->product_name }}" class="h-full w-full object-cover">
+                            @else
+                            <x-jewelry-placeholder :category="$item->product?->category?->slug" />
+                            @endif
+                        </span>
+                        @endforeach
+                    </div>
+                </a>
+                @endforeach
             </div>
-        </a>
-        @endforeach
+            @if($orders->hasPages())<div class="mt-6">{{ $orders->links() }}</div>@endif
+            @endif
+        </div>
+
+        <x-account-sidebar active="orders" />
     </div>
-    @if($orders->hasPages())
-    <div data-reveal class="mt-8 flex justify-center">{{ $orders->links() }}</div>
-    @endif
-    @endif
-</div>
+</section>
 @endsection
