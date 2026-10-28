@@ -1,12 +1,12 @@
 @props(['title', 'products', 'link' => null])
 
-<section {{ $attributes->merge(['class' => 'mt-10 md:mt-14']) }}>
+<section {{ $attributes->merge(['class' => 'mt-20']) }}>
     <div class="mb-5 flex items-center justify-between px-4 md:mb-6 md:px-20">
-        <h2 data-reveal class="text-lg font-bold text-[#2b2620] md:text-xl">{{ $title }}</h2>
+        <h2 data-reveal class="text-xl font-bold text-[#2b2620]">{{ $title }}</h2>
         @if($link)
         <a href="{{ $link }}" data-reveal class="group flex items-center gap-2 text-xs font-medium text-[#b08000] hover:underline">
-            <img src="/icons/arrow-left.svg" alt="" class="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1">
             مشاهده همه
+            <img src="/icons/arrow-left.svg" alt="" class="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1">
         </a>
         @endif
     </div>
@@ -24,9 +24,13 @@
 
         @if($products->count() > 1)
         <button type="button" data-carousel-prev aria-label="قبلی"
-                class="absolute right-2 top-1/3 z-10 hidden size-10 items-center justify-center rounded-xl border border-[#f0e6c8] bg-white text-[#8a6300] shadow-md transition-opacity hover:bg-[#fdf1c9] disabled:opacity-0 md:right-14 md:flex">›</button>
+                class="absolute right-[60px] top-1/2 z-10 hidden h-24 w-10 -translate-y-1/2 items-center justify-center rounded-2xl border border-[#e3d2a0] bg-white text-[#8a6300] transition-opacity hover:bg-[#fdf1c9] disabled:opacity-0 md:flex">
+            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7"/></svg>
+        </button>
         <button type="button" data-carousel-next aria-label="بعدی"
-                class="absolute left-2 top-1/3 z-10 hidden size-10 items-center justify-center rounded-xl border border-[#f0e6c8] bg-white text-[#8a6300] shadow-md transition-opacity hover:bg-[#fdf1c9] disabled:opacity-0 md:left-14 md:flex">‹</button>
+                class="absolute left-[60px] top-1/2 z-10 hidden h-24 w-10 -translate-y-1/2 items-center justify-center rounded-2xl border border-[#e3d2a0] bg-white text-[#8a6300] transition-opacity hover:bg-[#fdf1c9] disabled:opacity-0 md:flex">
+            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m15 5-7 7 7 7"/></svg>
+        </button>
         @endif
     </div>
 </section>

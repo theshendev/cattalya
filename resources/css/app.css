@@ -236,16 +236,17 @@
     .nav-link::after {
         content: '';
         position: absolute;
-        right: 0;
-        bottom: -4px;
+        right: 50%;
+        bottom: -6px;
         height: 2px;
         width: 0;
+        transform: translateX(50%);
         background: var(--color-brand-DEFAULT);
         border-radius: 2px;
         transition: width .25s cubic-bezier(.16,1,.3,1);
     }
     .nav-link:hover::after,
-    .nav-link[data-active]::after { width: 100%; }
+    .nav-link[data-active]::after { width: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

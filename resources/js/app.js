@@ -215,14 +215,6 @@ function initBackToTop() {
     const btn = document.getElementById('back-to-top');
     if (!btn) return;
 
-    const onScroll = () => {
-        const show = window.scrollY > 600;
-        btn.classList.toggle('opacity-0', !show);
-        btn.classList.toggle('translate-y-3', !show);
-        btn.classList.toggle('pointer-events-none', !show);
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
     btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
