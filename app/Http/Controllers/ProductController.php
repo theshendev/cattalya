@@ -16,8 +16,7 @@ class ProductController extends Controller
         $categories = Category::where('is_active', true)->orderBy('sort_order')->get();
 
         $query = Product::with(['category', 'media'])
-            ->where('is_active', true)
-            ->where('stock', '>', 0);
+            ->available();
 
         $selectedCategories = collect($request->input('categories', []))
             ->push($request->input('category'))
@@ -36,8 +35,7 @@ class ProductController extends Controller
 
         $calculatedPriceSql = 'CASE WHEN is_fixed_price = 1 THEN fixed_price ELSE ROUND((weight_grams * ?) * (1 + wage_percent / 100) * (1 + tax_percent / 100) + fee, 0) END';
 
-        $priceCeiling = (int) Product::where('is_active', true)
-            ->where('stock', '>', 0)
+        $priceCeiling = (int) Product::available()
             ->selectRaw('MAX('.$calculatedPriceSql.') as max_price', [$goldPricePerGram])
             ->value('max_price');
 
@@ -67,6 +65,8 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         abort_unless($product->is_active, 404);
+
+        $product->load('variants');
 
         $goldPrice = GoldPrice::current();
         $related = Product::with('media')

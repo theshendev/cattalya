@@ -43,11 +43,14 @@
                     </a>
                     <div class="min-w-0 flex-1 text-right">
                         <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm font-medium leading-6">{{ $item['name'] }}</a>
+                        @if(! $item['is_fixed_price'] && $item['weight_grams'])
+                        <p class="mt-1 text-xs text-[#a8a096]">{{ (float) $item['weight_grams'] }} گرم</p>
+                        @endif
                     </div>
                 </div>
 
                 <div class="mt-4 flex items-end justify-between">
-                    <form method="POST" action="{{ route('cart.update', $item['product_id']) }}" class="flex h-8 w-[98px] items-center justify-between rounded-full border border-[#f0e6c8] px-2.5" data-no-loading>
+                    <form method="POST" action="{{ route('cart.update', $item['key']) }}" class="flex h-8 w-[98px] items-center justify-between rounded-full border border-[#f0e6c8] px-2.5" data-no-loading>
                         @csrf @method('PATCH')
                         <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="text-[#c8960c]" aria-label="افزایش تعداد">
                             <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.5" d="M12 5v14M5 12h14"/></svg>

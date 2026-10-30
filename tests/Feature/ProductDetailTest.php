@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -38,6 +39,18 @@ class ProductDetailTest extends TestCase
             ->assertOk()
             ->assertSeeText('750/18')
             ->assertSeeText('طلای 18 عیار');
+    }
+
+    public function test_weight_variants_are_offered_with_sold_out_weights_disabled(): void
+    {
+        $product = $this->createProduct(['weight_grams' => 2.51]);
+        ProductVariant::factory()->for($product)->create(['weight_grams' => 3.51, 'stock' => 2]);
+        ProductVariant::factory()->for($product)->outOfStock()->create(['weight_grams' => 5.51]);
+
+        $response = $this->get(route('products.show', $product->slug))->assertOk();
+
+        $response->assertSeeInOrder(['2.51 گرم', '3.51 گرم', '5.51 گرم']);
+        $this->assertSame(1, preg_match_all('/<input type="radio" name="weight_option"[^>]*\sdisabled>/', $response->getContent()));
     }
 
     public function test_out_of_stock_product_cannot_be_added_to_cart(): void

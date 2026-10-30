@@ -35,23 +35,27 @@ class CartController extends Controller
 
     public function add(Request $request, Product $product)
     {
-        abort_unless($product->is_active && $product->stock > 0, 404);
+        $variant = $request->filled('variant_id')
+            ? $product->variants()->findOrFail($request->integer('variant_id'))
+            : null;
 
-        $this->cart->add($product, max(1, (int) $request->input('quantity', 1)));
+        abort_unless($product->canBeOrdered($variant), 404);
+
+        $this->cart->add($product, max(1, (int) $request->input('quantity', 1)), $variant);
 
         return back()->with('success', 'محصول به سبد خرید اضافه شد.');
     }
 
-    public function update(Request $request, int $productId)
+    public function update(Request $request, string $itemKey)
     {
-        $this->cart->update($productId, (int) $request->input('quantity', 1));
+        $this->cart->update($itemKey, (int) $request->input('quantity', 1));
 
         return back();
     }
 
-    public function remove(int $productId)
+    public function remove(string $itemKey)
     {
-        $this->cart->remove($productId);
+        $this->cart->remove($itemKey);
 
         return back()->with('success', 'محصول از سبد خرید حذف شد.');
     }

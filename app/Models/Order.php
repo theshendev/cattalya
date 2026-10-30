@@ -73,8 +73,9 @@ class Order extends Model
     {
         $this->update(['status' => 'paid']);
 
-        foreach ($this->items()->with('product')->whereNotNull('product_id')->get() as $item) {
-            $item->product?->decrement('stock', min($item->quantity, $item->product->stock));
+        foreach ($this->items()->with(['product', 'variant'])->whereNotNull('product_id')->get() as $item) {
+            $stockHolder = $item->variant ?? $item->product;
+            $stockHolder?->decrement('stock', min($item->quantity, $stockHolder->stock));
         }
     }
 }

@@ -108,12 +108,42 @@ class ProductResource extends Resource
                     ->visible(fn (Forms\Get $get) => $get('is_fixed_price')),
             ])->columns(2),
 
+            Forms\Components\Section::make('وزن‌های دیگر')
+                ->description('وزن اصلی محصول همیشه نمایش داده می‌شود. وزن‌های دیگری که مشتری می‌تواند انتخاب کند را اینجا اضافه کنید؛ قیمت هر وزن با همان اجرت، مالیات و هزینه ثابت محاسبه می‌شود.')
+                ->hidden(fn (Forms\Get $get) => $get('is_fixed_price'))
+                ->schema([
+                    Forms\Components\Repeater::make('variants')
+                        ->label('')
+                        ->relationship()
+                        ->schema([
+                            Forms\Components\TextInput::make('weight_grams')
+                                ->label('وزن (گرم)')
+                                ->numeric()
+                                ->step(0.001)
+                                ->minValue(0.001)
+                                ->required(),
+                            Forms\Components\TextInput::make('stock')
+                                ->label('موجودی')
+                                ->numeric()
+                                ->minValue(0)
+                                ->default(0)
+                                ->required(),
+                        ])
+                        ->columns(2)
+                        ->orderColumn('sort_order')
+                        ->addActionLabel('افزودن وزن')
+                        ->defaultItems(0),
+                ]),
+
             Forms\Components\Section::make('موجودی و وضعیت')->schema([
                 Forms\Components\TextInput::make('stock')
                     ->label('موجودی')
                     ->numeric()
                     ->required()
                     ->default(0),
+                Forms\Components\Toggle::make('is_made_to_order')
+                    ->label('ساخت سفارشی')
+                    ->helperText('در صورت فعال بودن، حتی بدون موجودی قابل سفارش است'),
                 Forms\Components\TextInput::make('sort_order')
                     ->label('ترتیب نمایش')
                     ->numeric()
@@ -121,7 +151,7 @@ class ProductResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->label('فعال')
                     ->default(true),
-            ])->columns(3),
+            ])->columns(2),
 
             Forms\Components\Section::make('تصاویر محصول')->schema([
                 Forms\Components\SpatieMediaLibraryFileUpload::make('images')
@@ -162,6 +192,10 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('stock')
                     ->label('موجودی')
                     ->color(fn ($state) => $state < 3 ? 'danger' : 'success'),
+                Tables\Columns\IconColumn::make('is_made_to_order')
+                    ->label('ساخت سفارشی')
+                    ->boolean()
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('فعال')
                     ->boolean(),

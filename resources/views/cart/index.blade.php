@@ -37,9 +37,16 @@
 
                     <div class="min-w-0 flex-1 text-right">
                         <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm font-medium leading-6 text-[#2b2620] md:text-base">{{ $item['name'] }}</a>
+                        @if(! $item['is_fixed_price'] && $item['weight_grams'])
+                        <p class="mt-1 text-xs text-[#a8a096]">{{ (float) $item['weight_grams'] }} گرم</p>
+                        @endif
                     </div>
 
+                    @if($item['is_made_to_order'] ?? false)
+                    <span class="rounded-lg bg-[#fdeee0] px-3 py-1.5 text-xs font-medium text-[#a34d06]">ساخت سفارشی</span>
+                    @else
                     <span class="rounded-lg bg-[#e6f6ec] px-3 py-1.5 text-xs font-medium text-[#1a7f3c]">آماده ارسال</span>
+                    @endif
 
                     <div class="min-w-28 text-right md:text-left">
                         <p class="text-sm font-bold text-[#2b2620]">{{ number_format($item['unit_price']) }} <span class="text-xs font-normal">تومان</span></p>
@@ -49,13 +56,13 @@
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <form method="POST" action="{{ route('cart.update', $item['product_id']) }}" class="flex items-center overflow-hidden rounded-2xl border border-[#ead69e]" data-no-loading>
+                        <form method="POST" action="{{ route('cart.update', $item['key']) }}" class="flex items-center overflow-hidden rounded-2xl border border-[#ead69e]" data-no-loading>
                             @csrf @method('PATCH')
                             <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="flex size-9 items-center justify-center text-xl text-[#c8960c]" aria-label="افزایش تعداد">+</button>
                             <span class="flex size-9 items-center justify-center border-x border-[#f0e6c8] text-sm">{{ $item['quantity'] }}</span>
                             <button type="submit" name="quantity" value="{{ $item['quantity'] - 1 }}" class="flex size-9 items-center justify-center text-xl text-red-400" aria-label="کاهش تعداد">−</button>
                         </form>
-                        <form method="POST" action="{{ route('cart.remove', $item['product_id']) }}" data-no-loading>
+                        <form method="POST" action="{{ route('cart.remove', $item['key']) }}" data-no-loading>
                             @csrf @method('DELETE')
                             <button type="submit" class="text-xs text-red-400 hover:underline">حذف</button>
                         </form>

@@ -4,11 +4,32 @@
 
 @php
     $images = $product->getMedia('images');
-    $isInStock = $product->stock > 0;
     $isWished = auth()->check() && auth()->user()->wishlists()->where('product_id', $product->id)->exists();
-    $price = $product->calculatePrice();
-    $listPrice = ! $product->is_fixed_price && $product->weight_grams ? $price * 1.04 : null;
-    $weightLabel = $product->is_fixed_price || ! $product->weight_grams ? null : rtrim(rtrim(number_format((float) $product->weight_grams, 2), '0'), '.').' گرم';
+    $goldPricePerGram = \App\Models\GoldPrice::currentPricePerGram();
+    $formatWeight = fn ($grams) => rtrim(rtrim(number_format((float) $grams, 2), '0'), '.').' گرم';
+    $weightOptions = collect([null])
+        ->merge($product->is_fixed_price ? [] : $product->variants)
+        ->map(function ($variant) use ($product, $goldPricePerGram, $formatWeight) {
+            $grams = (float) ($variant?->weight_grams ?? $product->weight_grams);
+            $price = $product->calculatePrice($goldPricePerGram, $product->is_fixed_price ? null : $grams);
+
+            return [
+                'variant_id' => $variant?->id,
+                'grams' => $grams,
+                'weight' => $product->is_fixed_price || ! $grams ? null : $formatWeight($grams),
+                'price' => number_format($price),
+                'list_price' => ! $product->is_fixed_price && $grams ? number_format($price * 1.04) : null,
+                'is_available' => $product->canBeOrdered($variant),
+            ];
+        })
+        ->sortBy('grams')
+        ->values();
+    $selectedOption = $weightOptions->firstWhere('is_available', true) ?? $weightOptions->first();
+    $hasWeightChoice = $weightOptions->count() > 1;
+    $isInStock = $selectedOption['is_available'];
+    $price = $selectedOption['price'];
+    $listPrice = $selectedOption['list_price'];
+    $weightLabel = $selectedOption['weight'];
     $specs = array_filter([
         'وزن محصول' => $weightLabel,
         'اجرت' => $product->is_fixed_price ? null : '%'.(float) $product->wage_percent,
@@ -103,7 +124,27 @@
                             <p data-reveal class="text-sm leading-7 text-[#6b6154] md:text-base">{{ $product->description }}</p>
                             @endif
 
-                            @if($highlights)
+                            @if($hasWeightChoice)
+                            <fieldset data-reveal class="md:mt-2">
+                                <legend class="sr-only">انتخاب وزن</legend>
+                                <div class="grid grid-cols-3 gap-2 md:flex md:gap-4">
+                                    @foreach($weightOptions as $option)
+                                    <label class="relative flex h-11 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-2xl border border-[#ead69e] bg-white px-2.5 text-sm text-[#6b6154] transition-colors has-checked:border-[#e3c46d] has-checked:bg-[#fdf1c9] has-checked:text-[#8a6300] has-disabled:cursor-not-allowed has-disabled:opacity-40 md:w-[150px] md:px-4">
+                                        <input type="radio" name="weight_option" class="peer sr-only" data-weight-option="{{ json_encode($option) }}" @checked($option === $selectedOption) @disabled(! $option['is_available'])>
+                                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full border border-[#a8a096] peer-checked:border-[#8a6300] peer-focus-visible:ring-2 peer-focus-visible:ring-[#c9a227] peer-checked:[&>span]:block" aria-hidden="true">
+                                            <span class="hidden size-2.5 rounded-full bg-[#8a6300]"></span>
+                                        </span>
+                                        {{ $option['weight'] }}
+                                    </label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+
+                            <p data-reveal class="flex items-center gap-2 border-t border-[#ede6d3] pt-5 text-xs text-[#6b6154] md:mt-2 md:text-sm">
+                                <img src="/icons/gift.svg" alt="" class="size-5">
+                                امکان ارسال به عنوان هدیه، همراه با بسته‌بندی مخصوص.
+                            </p>
+                            @elseif($highlights)
                             <ul data-reveal class="flex flex-wrap gap-3 md:mt-2">
                                 @foreach($highlights as $highlight)
                                 <li class="flex h-11 items-center gap-2 rounded-2xl bg-[#f9f8f4] px-4 text-sm text-[#2b2620]">
@@ -146,7 +187,7 @@
                     @foreach($specs as $label => $value)
                     <div class="flex items-center justify-between gap-4 border-b border-[#ede6d3] py-3.5 first:pt-0 last:border-b-0 last:pb-0">
                         <dt class="text-sm text-[#a8a096]">{{ $label }}:</dt>
-                        <dd class="text-sm font-bold text-[#2b2620]">{{ $value }}</dd>
+                        <dd class="text-sm font-bold text-[#2b2620]" @if($label === 'وزن محصول') data-option-weight @endif>{{ $value }}</dd>
                     </div>
                     @endforeach
                 </dl>
@@ -166,7 +207,9 @@
                 <div class="flex items-center justify-between gap-3 pb-4">
                     <dt class="text-[#a8a096]">وضعیت محصول:</dt>
                     <dd>
-                        @if($isInStock)
+                        @if($product->is_made_to_order)
+                        <span class="rounded-lg bg-[#fdeee0] px-4 py-1.5 text-xs font-medium text-[#a34d06]">ساخت سفارشی</span>
+                        @elseif($isInStock)
                         <span class="rounded-lg bg-[#e6f6ec] px-4 py-1.5 text-xs font-medium text-[#1a7f3c]">آماده ارسال</span>
                         @else
                         <span class="rounded-lg bg-[#fbeaea] px-4 py-1.5 text-xs font-medium text-[#c0392b]">ناموجود</span>
@@ -176,7 +219,7 @@
                 @if(! $product->is_fixed_price)
                 <div class="flex items-center justify-between gap-3 border-t border-[#ede6d3] py-5">
                     <dt class="text-[#a8a096]">وزن:</dt>
-                    <dd class="text-[#2b2620]">{{ $weightLabel }}</dd>
+                    <dd class="text-[#2b2620]" data-option-weight>{{ $weightLabel }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-3 border-t border-[#ede6d3] py-5">
                     <dt class="text-[#a8a096]">اجرت:</dt>
@@ -193,9 +236,9 @@
                     <dt class="pb-1 text-[#a8a096]">قیمت نهایی:</dt>
                     <dd class="text-left">
                         @if($listPrice)
-                        <p class="text-xs text-[#a8a096] line-through">{{ number_format($listPrice) }} تومان</p>
+                        <p class="text-xs text-[#a8a096] line-through"><span data-option-list-price>{{ $listPrice }}</span> تومان</p>
                         @endif
-                        <p class="mt-1 text-lg font-bold text-[#2b2620]">{{ number_format($price) }} <span class="text-base">تومان</span></p>
+                        <p class="mt-1 text-lg font-bold text-[#2b2620]"><span data-option-price>{{ $price }}</span> <span class="text-base">تومان</span></p>
                     </dd>
                 </div>
             </dl>
@@ -241,6 +284,16 @@ function selectImage(button, url) {
     next.src = url;
 }
 
+document.querySelectorAll('[data-weight-option]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+        const option = JSON.parse(radio.dataset.weightOption);
+        document.querySelectorAll('[data-option-price]').forEach((el) => el.textContent = option.price);
+        document.querySelectorAll('[data-option-list-price]').forEach((el) => el.textContent = option.list_price);
+        document.querySelectorAll('[data-option-weight]').forEach((el) => el.textContent = option.weight);
+        document.querySelectorAll('[data-variant-input]').forEach((input) => input.value = option.variant_id ?? '');
+    });
+});
+
 document.querySelectorAll('[data-share-product]').forEach((button) => {
     button.addEventListener('click', async () => {
         const shareData = { title: document.title, url: window.location.href };
@@ -262,9 +315,9 @@ document.querySelectorAll('[data-share-product]').forEach((button) => {
         <span class="pb-1 text-sm text-[#a8a096]">قیمت نهایی:</span>
         <div class="text-left">
             @if($listPrice)
-            <p class="text-xs text-[#a8a096] line-through">{{ number_format($listPrice) }} تومان</p>
+            <p class="text-xs text-[#a8a096] line-through"><span data-option-list-price>{{ $listPrice }}</span> تومان</p>
             @endif
-            <p class="text-lg font-bold text-[#2b2620]">{{ number_format($price) }} <span class="text-base">تومان</span></p>
+            <p class="text-lg font-bold text-[#2b2620]"><span data-option-price>{{ $price }}</span> <span class="text-base">تومان</span></p>
         </div>
     </div>
     @include('products.partials.add-to-cart')
