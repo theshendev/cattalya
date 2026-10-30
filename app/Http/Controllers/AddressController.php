@@ -14,8 +14,8 @@ class AddressController extends Controller
         $data = $this->validated($request);
 
         $address = $user->addresses()->create($data + [
-            'receiver_name' => $data['receiver_name'] ?? trim($user->name.' '.$user->last_name),
-            'phone' => $data['phone'] ?? $user->phone,
+            'receiver_name' => trim($user->name.' '.$user->last_name),
+            'phone' => $user->phone,
         ]);
 
         if ($request->boolean('is_default') || $user->addresses()->count() === 1) {
@@ -53,14 +53,18 @@ class AddressController extends Controller
     }
 
     /**
+     * Validate the address fields. When the buyer says they are the receiver, their own
+     * name and phone replace whatever receiver details were sent.
+     *
      * @return array<string, mixed>
      */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title' => ['nullable', 'string', 'max:50'],
-            'receiver_name' => ['nullable', 'string', 'max:100'],
-            'phone' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+            'receiver_is_self' => ['sometimes', 'boolean'],
+            'receiver_name' => ['nullable', 'required_if:receiver_is_self,0', 'string', 'max:100'],
+            'phone' => ['nullable', 'required_if:receiver_is_self,0', 'regex:/^09[0-9]{9}$/'],
             'province' => ['required', 'string', 'max:50'],
             'city' => ['required', 'string', 'max:50'],
             'address' => ['required', 'string', 'max:500'],
@@ -74,7 +78,19 @@ class AddressController extends Controller
             'address.required' => 'آدرس الزامی است.',
             'postal_code.required' => 'کد پستی الزامی است.',
             'postal_code.digits' => 'کد پستی باید ۱۰ رقم باشد.',
+            'receiver_name.required_if' => 'نام و نام خانوادگی گیرنده الزامی است.',
+            'phone.required_if' => 'شماره همراه گیرنده الزامی است.',
         ]);
+
+        if ($request->boolean('receiver_is_self')) {
+            $user = $request->user();
+            $data['receiver_name'] = trim($user->name.' '.$user->last_name);
+            $data['phone'] = $user->phone;
+        }
+
+        unset($data['receiver_is_self']);
+
+        return array_filter($data, fn ($value, $field) => $value !== null || ! in_array($field, ['receiver_name', 'phone'], true), ARRAY_FILTER_USE_BOTH);
     }
 
     private function makeDefault(Address $address): void

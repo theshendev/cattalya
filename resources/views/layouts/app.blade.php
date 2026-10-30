@@ -164,8 +164,17 @@
     </div>
 </footer>
 
+@php $hidesMobileNav = View::hasSection('hide-mobile-nav'); @endphp
+@if(trim($__env->yieldPushContent('mobile-dock')) !== '')
+<div class="h-36 lg:hidden" aria-hidden="true"></div>
+<div class="fixed inset-x-0 z-40 lg:hidden {{ $hidesMobileNav ? 'bottom-0' : 'bottom-16 md:bottom-0' }}">
+    @stack('mobile-dock')
+</div>
+@endif
+
 @hasSection('mobile-bottom-bar')
 @yield('mobile-bottom-bar')
+@elseif($hidesMobileNav)
 @else
 <nav class="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-[#e5dcc7] bg-white md:hidden" aria-label="دسترسی سریع">
     @foreach([

@@ -81,6 +81,10 @@ class CheckoutController extends Controller
             'items' => $this->cart->itemsWithPrices(),
             'address' => $address,
             'gateways' => $this->payments->gatewayOptions($this->checkout->quote()['total']),
+            'upcomingGateways' => collect(config('gateways.drivers'))
+                ->reject(fn (array $driver) => $driver['enabled'] ?? true)
+                ->map(fn (array $driver, string $name) => $driver['label'] ?? $name)
+                ->all(),
             'quote' => $this->checkout->quote(),
             'packagingCost' => $this->checkout->quote(isGift: true)['packaging'],
         ]);
