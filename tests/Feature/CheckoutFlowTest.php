@@ -63,6 +63,31 @@ class CheckoutFlowTest extends TestCase
         $this->get(route('cart.index'))->assertSeeText('سبد خرید شما خالی است');
     }
 
+    public function test_cart_charges_the_same_price_as_the_product_page_including_the_fee(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->product->category_id,
+            'name' => 'دستبند کارتیه',
+            'slug' => 'cartier-bracelet',
+            'weight_grams' => 2,
+            'wage_percent' => 10,
+            'tax_percent' => 9,
+            'fee' => 50_000.40,
+            'stock' => 5,
+            'is_active' => true,
+        ]);
+
+        $this->post(route('cart.add', $product))->assertRedirect();
+
+        $productPagePrice = $product->fresh()->calculatePrice();
+        $this->assertSame(2_448_000.0, $productPagePrice);
+
+        $this->get(route('cart.index'))
+            ->assertOk()
+            ->assertSeeText(number_format($productPagePrice))
+            ->assertDontSeeText(number_format(2_398_000));
+    }
+
     public function test_checkout_without_an_address_asks_for_one(): void
     {
         $user = User::factory()->create(['phone' => '09121234567']);

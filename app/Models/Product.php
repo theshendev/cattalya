@@ -55,11 +55,24 @@ class Product extends Model implements HasMedia
             return (float) $this->fixed_price;
         }
 
-        $goldPrice = $goldPricePerGram ?? GoldPrice::currentPricePerGram();
-        $base = (float) $this->weight_grams * $goldPrice;
-        $wage = $base * ((float) $this->wage_percent / 100);
-        $tax = ($base + $wage) * ((float) $this->tax_percent / 100);
-        $fee = (float) $this->fee;
+        return self::calculateGoldPrice(
+            (float) $this->weight_grams,
+            (float) $this->wage_percent,
+            (float) $this->tax_percent,
+            (float) $this->fee,
+            $goldPricePerGram ?? GoldPrice::currentPricePerGram(),
+        );
+    }
+
+    /**
+     * Gold-based price shared by the product page and the cart, rounded to whole tomans.
+     * Formula: (weight × gold_rate) + wage% + tax% + fee
+     */
+    public static function calculateGoldPrice(float $weightGrams, float $wagePercent, float $taxPercent, float $fee, float $goldPricePerGram): float
+    {
+        $base = $weightGrams * $goldPricePerGram;
+        $wage = $base * ($wagePercent / 100);
+        $tax = ($base + $wage) * ($taxPercent / 100);
 
         return round($base + $wage + $tax + $fee, 0);
     }

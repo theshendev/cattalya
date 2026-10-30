@@ -30,6 +30,7 @@ class CartService
                 'weight_grams' => $product->weight_grams,
                 'wage_percent' => $product->wage_percent,
                 'tax_percent' => $product->tax_percent,
+                'fee' => $product->fee,
                 'is_fixed_price' => $product->is_fixed_price,
                 'fixed_price' => $product->fixed_price,
                 'stock' => $product->stock,
@@ -100,10 +101,12 @@ class CartService
             return (float) $item['fixed_price'];
         }
 
-        $base = $item['weight_grams'] * $goldPricePerGram;
-        $wage = $base * ($item['wage_percent'] / 100);
-        $tax = ($base + $wage) * ($item['tax_percent'] / 100);
-
-        return $base + $wage + $tax;
+        return Product::calculateGoldPrice(
+            (float) $item['weight_grams'],
+            (float) $item['wage_percent'],
+            (float) $item['tax_percent'],
+            (float) ($item['fee'] ?? 0),
+            $goldPricePerGram,
+        );
     }
 }
