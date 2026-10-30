@@ -60,6 +60,11 @@
         </div>
     </div>
 
+    @hasSection('mobile-header')
+    <div class="flex h-16 items-center justify-between px-4 md:hidden">
+        @yield('mobile-header')
+    </div>
+    @else
     <div class="grid h-16 grid-cols-3 items-center px-4 md:hidden">
         <button id="mobile-menu-btn" aria-expanded="false" aria-controls="mobile-nav" class="press flex h-10 w-10 items-center justify-center justify-self-start rounded-2xl border border-[#dfc47d] bg-white" aria-label="باز کردن منو">
             <svg id="menu-icon-open" class="h-5 w-5 text-[#4d4942]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="1.6" d="M5 7h14M5 12h14M5 17h14"/></svg>
@@ -70,6 +75,7 @@
             <img src="/icons/search.svg" alt="" class="h-5 w-5">
         </a>
     </div>
+    @endif
 
     <nav id="mobile-nav" class="max-h-0 overflow-hidden border-[#f0e6c8] bg-white opacity-0 transition-[max-height,opacity] duration-300 md:hidden">
         <div class="flex flex-col gap-1 border-t border-[#f0e6c8] px-5 py-3">
@@ -81,7 +87,7 @@
     </nav>
 </header>
 
-<div class="flex h-10 items-center justify-between gap-3 bg-[#fdf0e4] px-4 text-xs md:px-20">
+<div class="h-10 items-center justify-between gap-3 bg-[#fdf0e4] px-4 text-xs md:flex md:px-20 @hasSection('mobile-header') hidden @else flex @endif">
     <p class="hidden truncate text-[#a66d00] md:block">{{ $announcement?->text ?? 'تمامی محصولات باتوجه به قیمت روز طلا قیمت‌گذاری شده‌اند.' }}</p>
     <p class="mx-auto whitespace-nowrap text-[#a34d06] md:mx-0">
         قیمت لحظه‌ای طلا:
@@ -108,7 +114,7 @@
     })();
 </script>
 
-<main class="page-enter {{ request()->routeIs('products.show') ? 'pb-48 lg:pb-0' : 'pb-20 md:pb-0' }}">
+<main class="page-enter {{ request()->routeIs('products.show') ? '' : 'pb-20 md:pb-0' }}">
     @yield('content')
 </main>
 
@@ -158,6 +164,9 @@
     </div>
 </footer>
 
+@hasSection('mobile-bottom-bar')
+@yield('mobile-bottom-bar')
+@else
 <nav class="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-[#e5dcc7] bg-white md:hidden" aria-label="دسترسی سریع">
     @foreach([
         ['label' => 'خانه', 'url' => route('home'), 'active' => request()->routeIs('home'), 'icon' => 'home'],
@@ -175,6 +184,7 @@
     </a>
     @endforeach
 </nav>
+@endif
 
 </body>
 </html>

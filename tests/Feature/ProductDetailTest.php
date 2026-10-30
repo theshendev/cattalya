@@ -30,6 +30,16 @@ class ProductDetailTest extends TestCase
             ->assertSeeText('12*12 سانتی‌متر');
     }
 
+    public function test_karat_is_shown_with_its_millesimal_fineness(): void
+    {
+        $product = $this->createProduct(['karat' => 18]);
+
+        $this->get(route('products.show', $product->slug))
+            ->assertOk()
+            ->assertSeeText('750/18')
+            ->assertSeeText('طلای 18 عیار');
+    }
+
     public function test_out_of_stock_product_cannot_be_added_to_cart(): void
     {
         $product = $this->createProduct(['stock' => 0]);
