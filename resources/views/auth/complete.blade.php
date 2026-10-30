@@ -10,9 +10,9 @@
         <x-auth-field name="password" label="رمز عبور" type="password" :password="true" required autocomplete="new-password" />
         <x-auth-field name="password_confirmation" label="تکرار رمز عبور" type="password" :password="true" required autocomplete="new-password" />
 
-        <div class="mt-2 grid grid-cols-2 gap-3 border-t border-[#f0e6c8] pt-4">
-            <button type="submit" class="press h-12 rounded-2xl bg-[#111] text-sm text-white">ایجاد حساب</button>
+        <div class="mt-2 grid grid-cols-2 gap-3 border-t border-[#ede6d3] pt-4">
             <a href="{{ route('home') }}" class="press flex h-12 items-center justify-center rounded-2xl border border-[#111] text-sm">انصراف</a>
+            <button type="submit" class="press h-12 rounded-2xl bg-[#111] text-sm text-white">ایجاد حساب</button>
         </div>
     </form>
 </x-auth-card>

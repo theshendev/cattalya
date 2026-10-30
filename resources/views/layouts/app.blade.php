@@ -29,16 +29,18 @@
 
 <header id="site-header" class="sticky top-0 z-50 border-b border-[#f0e6c8] bg-white transition-shadow duration-300">
     <div class="hidden h-[72px] items-center justify-between px-20 md:flex">
+        <div class="flex items-center gap-20">
         <a href="{{ route('home') }}" class="shrink-0 transition-transform duration-300 hover:scale-105" aria-label="کاتالیا">
             <x-cattalya-logo />
         </a>
 
-        <nav class="flex items-center gap-11 text-sm text-[#6b6154]">
+        <nav class="flex items-center gap-8 text-sm text-[#6b6154]">
             <a href="{{ route('home') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('home') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('home')) data-active @endif>صفحه اصلی</a>
             <a href="{{ route('products.index') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('products.*') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('products.*')) data-active @endif>محصولات</a>
             <a href="{{ route('about') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('about') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('about')) data-active @endif>درباره ما</a>
             <a href="{{ route('contact') }}" class="nav-link transition-colors hover:text-[#8a6300] {{ request()->routeIs('contact*') ? 'font-bold text-[#8a6300]' : '' }}" @if(request()->routeIs('contact*')) data-active @endif>تماس با ما</a>
         </nav>
+        </div>
 
         <div class="flex items-center gap-4">
             <a href="{{ route('products.index') }}" class="flex h-10 w-[220px] items-center gap-2 rounded-2xl border border-[#e8d49a] px-4 text-[#a8a096] transition-colors hover:border-[#8a6300]">
@@ -110,10 +112,6 @@
     @yield('content')
 </main>
 
-<button id="back-to-top" aria-label="بازگشت به بالا" class="fixed bottom-20 left-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-[#dfc47d] bg-white opacity-0 shadow-sm transition-all duration-300 md:bottom-5">
-    <img src="/icons/arrow-up.svg" alt="" class="h-4 w-4">
-</button>
-
 @php
     $siteDescription = \App\Models\Setting::get('site_description') ?: 'گالری کاتالیا در سال ۱۴۰۲ فعالیت خودش رو در حوزه فروش زیورآلات طلا شروع کرده.';
     $footerCopyright = \App\Models\Setting::get('footer_copyright') ?: '© ۱۴۰۵ کاتالیا | تمامی حقوق مادی و معنوی این وب‌سایت محفوظ است.';
@@ -124,17 +122,20 @@
         'sms' => \App\Models\Setting::get('contact_email') ? 'mailto:'.\App\Models\Setting::get('contact_email') : null,
     ]);
 @endphp
-<footer class="mt-16 border-t border-[#e5e7eb] bg-white">
-    <div class="px-6 pb-24 pt-10 md:px-20 md:pb-5">
-        <div class="flex flex-col items-center gap-8 md:flex-row md:gap-16">
-            <div class="flex flex-1 flex-col items-center gap-3 text-center md:items-start md:text-right">
+<footer class="relative mt-20 border-t border-[#e5e7eb] bg-white">
+    <button id="back-to-top" type="button" aria-label="بازگشت به بالا" class="press absolute left-1/2 top-0 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-[#e3d2a0] bg-white">
+        <img src="/icons/arrow-up.svg" alt="" class="size-5">
+    </button>
+    <div class="px-4 pb-24 pt-10 md:px-20 md:pb-5">
+        <div class="flex flex-col items-start gap-8 md:flex-row md:items-center md:gap-20">
+            <div class="flex flex-col items-start gap-3 text-right md:w-[404px] md:shrink-0">
                 <x-cattalya-logo size="sm" />
                 <p class="max-w-sm text-sm leading-7 text-[#6b6154]">{{ $siteDescription }}</p>
             </div>
             <span class="hidden h-16 w-px bg-[#f0e6c8] md:block"></span>
-            <div class="flex flex-1 flex-col items-center gap-4">
+            <div class="flex flex-col items-start gap-4 md:flex-1">
                 <p class="text-xs text-[#a8a096]">لینک‌ها</p>
-                <div class="flex flex-col items-center gap-3 text-sm text-[#6b6154] md:flex-row md:gap-8">
+                <div class="flex flex-col items-start gap-4 text-sm text-[#6b6154] md:flex-row md:gap-8">
                     <a href="{{ route('home') }}">صفحه اصلی</a>
                     <a href="{{ route('products.index') }}">محصولات</a>
                     <a href="{{ route('about') }}">درباره ما</a>
@@ -142,7 +143,7 @@
                 </div>
             </div>
             <span class="hidden h-16 w-px bg-[#f0e6c8] md:block"></span>
-            <div class="flex flex-1 flex-col items-center gap-3 md:items-end">
+            <div class="flex flex-col items-start gap-3 md:w-[209px]">
                 <p class="text-xs text-[#a8a096]">راه‌های ارتباطی</p>
                 <div class="flex gap-3">
                     @forelse($socialLinks as $social => $url)
@@ -153,14 +154,26 @@
                 </div>
             </div>
         </div>
-        <div class="mt-8 border-t border-[#ede6d3] pt-5 text-center text-xs md:text-right">{{ $footerCopyright }}</div>
+        <div class="mt-8 border-t border-[#ede6d3] pt-5 text-right text-xs">{{ $footerCopyright }}</div>
     </div>
 </footer>
 
 <nav class="fixed inset-x-0 bottom-0 z-40 flex h-16 items-center justify-around border-t border-[#e5dcc7] bg-white md:hidden" aria-label="دسترسی سریع">
-    <a href="{{ route('home') }}" class="flex h-12 w-12 items-center justify-center" aria-label="خانه"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 11 9-7 9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a>
-    <a href="{{ route('cart.drawer') }}" class="relative flex h-12 w-12 items-center justify-center" aria-label="سبد خرید"><img src="/icons/cart.svg" alt="" class="h-5 w-5"></a>
-    <a href="{{ auth()->check() ? route('profile.show') : route('login') }}" class="flex h-12 w-12 items-center justify-center" aria-label="حساب کاربری"><img src="/icons/user.svg" alt="" class="h-5 w-5"></a>
+    @foreach([
+        ['label' => 'خانه', 'url' => route('home'), 'active' => request()->routeIs('home'), 'icon' => 'home'],
+        ['label' => 'سبد خرید', 'url' => route('cart.drawer'), 'active' => request()->routeIs('cart.*', 'checkout.*'), 'icon' => 'cart'],
+        ['label' => 'حساب', 'url' => auth()->check() ? route('profile.show') : route('login'), 'active' => request()->routeIs('profile.*', 'orders.*', 'wishlist.*', 'login', 'register*', 'otp.*'), 'icon' => 'user'],
+    ] as $tab)
+    <a href="{{ $tab['url'] }}" aria-label="{{ $tab['label'] }}" @if($tab['active']) aria-current="page" @endif
+       class="flex h-10 items-center justify-center gap-1.5 rounded-2xl {{ $tab['active'] ? 'border border-[#c9a227] bg-[#fff6d9] px-4 text-sm font-bold text-[#8a6300]' : 'w-12' }}">
+        @if($tab['icon'] === 'home')
+        <svg class="h-5 w-5 {{ $tab['active'] ? 'text-[#c9a227]' : '' }}" fill="{{ $tab['active'] ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 11 9-7 9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        @else
+        <img src="/icons/{{ $tab['icon'] }}.svg" alt="" class="h-5 w-5">
+        @endif
+        @if($tab['active'])<span>{{ $tab['label'] }}</span>@endif
+    </a>
+    @endforeach
 </nav>
 
 </body>

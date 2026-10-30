@@ -10,29 +10,30 @@
         <div class="flex items-center justify-between text-sm">
             <span class="text-[#8b8277]">کد تایید ارسال شده را وارد کنید</span>
             <a href="{{ route('register') }}" class="flex items-center gap-1 text-xs text-[#1f7a8c]" aria-label="ویرایش شماره">
-                <span aria-hidden="true">✎</span><span dir="ltr">{{ $phone }}</span>
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linejoin="round" stroke-width="1.5" d="m13.3 5.7 5 5M4 20h16M5 15l9.6-9.6a2.1 2.1 0 0 1 3 3L8 18H5v-3Z"/></svg><span dir="ltr">{{ $phone }}</span>
             </a>
         </div>
 
         <div class="flex justify-between gap-2" dir="ltr" id="otp-boxes">
             @for($i = 0; $i < 6; $i++)
             <input type="text" inputmode="numeric" maxlength="1" autocomplete="{{ $i === 0 ? 'one-time-code' : 'off' }}" aria-label="رقم {{ $i + 1 }}"
-                   class="size-12 rounded-xl border border-[#ead69e] text-center text-lg font-bold outline-none focus:border-[#c8960c] md:size-[52px]">
+                   class="size-12 rounded-xl border border-[#f0e6c8] text-center text-lg font-bold outline-none focus:border-[#fbbc00] md:size-[52px]">
             @endfor
         </div>
         @error('otp')<p class="text-right text-xs text-red-500">{{ $message }}</p>@enderror
         @error('phone')<p class="text-right text-xs text-red-500">{{ $message }}</p>@enderror
 
         <div class="flex items-center justify-between text-xs">
-            <span class="text-[#a8a096]"><span id="resend-seconds">{{ $resendIn }}</span> ثانیه تا ارسال مجدد</span>
+            <span class="flex items-center gap-1 text-[#a8a096]"><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path stroke-linecap="round" stroke-width="1.5" d="M12 7.5V12l3 2"/></svg><span><span id="resend-seconds">{{ $resendIn }}</span> ثانیه تا ارسال مجدد</span></span>
             <button type="submit" form="resend-otp" id="resend-button" class="flex items-center gap-1 text-[#1f7a8c] disabled:cursor-not-allowed disabled:opacity-40" @disabled($resendIn > 0)>
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.25" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.8 10.2a4 4 0 0 0-7.3-.9M8.2 13.8a4 4 0 0 0 7.3.9M8.3 7.5v1.9h1.9M15.7 16.5v-1.9h-1.9"/></svg>
                 ارسال مجدد کد ورود
             </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 border-t border-[#f0e6c8] pt-4">
-            <button type="submit" class="press h-12 rounded-2xl bg-[#111] text-sm text-white">ثبت و ادامه</button>
+        <div class="grid grid-cols-2 gap-3 border-t border-[#ede6d3] pt-4">
             <a href="{{ route('home') }}" class="press flex h-12 items-center justify-center rounded-2xl border border-[#111] text-sm">انصراف</a>
+            <button type="submit" class="press h-12 rounded-2xl bg-[#111] text-sm text-white">ثبت و ادامه</button>
         </div>
     </form>
 

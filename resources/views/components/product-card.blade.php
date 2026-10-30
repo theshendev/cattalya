@@ -34,14 +34,14 @@
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col justify-between gap-3 {{ $variant === 'listing' ? 'py-1' : 'w-full' }}">
-        <p class="w-full line-clamp-3 text-right text-sm font-medium leading-6 text-[#2b2620] transition-colors duration-200 group-hover:text-[#8a6300] md:line-clamp-2">{{ $product->name }}</p>
+        <p class="w-full {{ $variant === 'listing' ? 'line-clamp-3' : 'line-clamp-2' }} text-right text-sm font-medium leading-6 text-[#2b2620] md:text-base md:leading-7 transition-colors duration-200 group-hover:text-[#8a6300] md:line-clamp-2">{{ $product->name }}</p>
 
         <div class="flex w-full items-end gap-2 md:items-center md:gap-4">
             <div class="min-w-0 flex-1 text-right">
                 @if(! $product->is_fixed_price && $product->weight_grams)
                 <p class="mb-1 text-[10px] text-[#a8a096] line-through decoration-[#d6cbb0] md:text-xs">{{ number_format($price * 1.04) }} ت</p>
                 @endif
-                <p class="truncate text-base font-bold text-[#2b2620] md:text-xl">{{ number_format($price) }} <span class="text-xs font-normal">تومان</span></p>
+                <p class="truncate text-base font-bold text-[#2b2620] md:text-xl">{{ number_format($price) }} تومان</p>
             </div>
             <span class="hidden size-8 shrink-0 items-center justify-center rounded-full border border-[#f0e6c8] bg-[#f9f6f3] transition-all duration-300 group-hover:scale-110 group-hover:border-[#8a6300] group-hover:bg-[#8a6300] md:flex md:size-12">
                 <img src="/icons/arrow-left.svg" alt="" class="size-4 transition-all duration-300 group-hover:-translate-x-0.5 group-hover:brightness-0 group-hover:invert md:size-5">
