@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\GoldPrice;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Support\Collection;
 
 class CartService
@@ -12,53 +13,64 @@ class CartService
 
     public function items(): Collection
     {
-        return collect(session(self::KEY, []));
+        return collect(session(self::KEY, []))->map(fn (array $item, int|string $key) => ['key' => (string) $key] + $item);
     }
 
-    public function add(Product $product, int $quantity = 1): void
+    public function add(Product $product, int $quantity = 1, ?ProductVariant $variant = null): void
     {
         $cart = session(self::KEY, []);
-        $id = $product->id;
+        $key = $variant ? $product->id.'-'.$variant->id : (string) $product->id;
+        $stockLimit = $product->is_made_to_order ? null : ($variant ?? $product)->stock;
 
-        if (isset($cart[$id])) {
-            $cart[$id]['quantity'] = min($cart[$id]['quantity'] + $quantity, $product->stock);
+        if (isset($cart[$key])) {
+            $cart[$key]['quantity'] = $this->limitQuantity($cart[$key]['quantity'] + $quantity, $stockLimit);
         } else {
-            $cart[$id] = [
-                'product_id' => $id,
+            $cart[$key] = [
+                'product_id' => $product->id,
+                'product_variant_id' => $variant?->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
-                'weight_grams' => $product->weight_grams,
+                'weight_grams' => $variant?->weight_grams ?? $product->weight_grams,
                 'wage_percent' => $product->wage_percent,
                 'tax_percent' => $product->tax_percent,
                 'is_fixed_price' => $product->is_fixed_price,
                 'fixed_price' => $product->fixed_price,
-                'stock' => $product->stock,
+                'is_made_to_order' => $product->is_made_to_order,
+                'stock' => $stockLimit,
                 'image' => $product->getFirstMediaUrl('images', 'thumb') ?: $product->getFirstMediaUrl('images'),
-                'quantity' => $quantity,
+                'quantity' => $this->limitQuantity($quantity, $stockLimit),
             ];
         }
 
         session([self::KEY => $cart]);
     }
 
-    public function remove(int $productId): void
+    public function remove(string $key): void
     {
         $cart = session(self::KEY, []);
-        unset($cart[$productId]);
+        unset($cart[$key]);
         session([self::KEY => $cart]);
     }
 
-    public function update(int $productId, int $quantity): void
+    public function update(string $key, int $quantity): void
     {
         $cart = session(self::KEY, []);
-        if (isset($cart[$productId])) {
+        if (isset($cart[$key])) {
             if ($quantity < 1) {
-                unset($cart[$productId]);
+                unset($cart[$key]);
             } else {
-                $cart[$productId]['quantity'] = min($quantity, $cart[$productId]['stock']);
+                $cart[$key]['quantity'] = $this->limitQuantity($quantity, $cart[$key]['stock']);
             }
         }
         session([self::KEY => $cart]);
+    }
+
+    /**
+     * Cap a quantity at the available stock; made-to-order items have no cap.
+     */
+    private function limitQuantity(int $quantity, ?int $stockLimit): int
+    {
+        return $stockLimit === null ? $quantity : min($quantity, $stockLimit);
     }
 
     public function clear(): void

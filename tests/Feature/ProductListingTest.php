@@ -37,6 +37,33 @@ class ProductListingTest extends TestCase
             ->assertSeeInOrder([$higherPricedProduct->name, $lowerPricedProduct->name]);
     }
 
+    public function test_price_range_accepts_formatted_persian_digits(): void
+    {
+        [$lowerPricedProduct, $higherPricedProduct] = $this->createProducts();
+
+        $response = $this->get(route('products.index', ['min_price' => '۱۰,۰۰۰,۰۰۰']));
+
+        $response
+            ->assertOk()
+            ->assertSeeText($higherPricedProduct->name)
+            ->assertDontSeeText($lowerPricedProduct->name);
+    }
+
+    public function test_products_can_be_filtered_by_multiple_categories(): void
+    {
+        [$necklace] = $this->createProducts();
+        $earring = $this->createProductInCategory('earring', 'گوشواره ستاره');
+        $ring = $this->createProductInCategory('ring', 'انگشتر ساده');
+
+        $response = $this->get(route('products.index', ['categories' => ['necklace', 'earring']]));
+
+        $response
+            ->assertOk()
+            ->assertSeeText($necklace->name)
+            ->assertSeeText($earring->name)
+            ->assertDontSeeText($ring->name);
+    }
+
     /**
      * @return array{Product, Product}
      */
@@ -70,5 +97,25 @@ class ProductListingTest extends TestCase
         ]);
 
         return [$lowerPricedProduct, $higherPricedProduct];
+    }
+
+    private function createProductInCategory(string $categorySlug, string $productName): Product
+    {
+        $category = Category::create([
+            'name' => $categorySlug,
+            'slug' => $categorySlug,
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        return Product::create([
+            'category_id' => $category->id,
+            'name' => $productName,
+            'slug' => $categorySlug.'-product',
+            'is_fixed_price' => true,
+            'fixed_price' => 7_000_000,
+            'stock' => 1,
+            'is_active' => true,
+        ]);
     }
 }

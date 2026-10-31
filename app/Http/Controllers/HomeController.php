@@ -20,15 +20,13 @@ class HomeController extends Controller
         $categories = Category::where('is_active', true)->orderBy('sort_order')->get();
 
         $newestProducts = Product::with(['category', 'media'])
-            ->where('is_active', true)
-            ->where('stock', '>', 0)
+            ->available()
             ->latest()
             ->take(8)
             ->get();
 
         $featuredProducts = Product::with(['category', 'media'])
-            ->where('is_active', true)
-            ->where('stock', '>', 0)
+            ->available()
             ->inRandomOrder()
             ->take(8)
             ->get();

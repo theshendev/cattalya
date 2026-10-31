@@ -18,16 +18,16 @@
     </div>
     @else
     <div class="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_325px]">
-        <section class="rounded-3xl bg-white p-5 md:p-6">
+        <section class="rounded-3xl bg-white p-5 md:px-8 md:py-6">
             <div class="flex items-center gap-2 text-right">
                 <h1 class="text-lg font-bold text-[#2b2620] md:text-xl">خلاصه سبد خرید</h1>
                 <span class="text-xs text-[#a8a096]">({{ $items->sum('quantity') }} کالا)</span>
             </div>
 
-            <div class="mt-4 divide-y divide-[#f0e6c8]">
+            <div class="mt-2 divide-y divide-[#ede6d3] border-b border-[#ede6d3]">
                 @foreach($items as $item)
-                <article class="flex flex-wrap items-center gap-4 py-5 md:flex-nowrap">
-                    <a href="{{ route('products.show', $item['slug']) }}" class="size-20 shrink-0 overflow-hidden rounded-2xl bg-[#f9f6f3]">
+                <article class="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-5 py-6 md:flex md:gap-6 md:py-6">
+                    <a href="{{ route('products.show', $item['slug']) }}" class="size-24 shrink-0 overflow-hidden rounded-2xl bg-[#f5f5f5] md:size-20">
                         @if($item['image'])
                         <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover">
                         @else
@@ -35,34 +35,52 @@
                         @endif
                     </a>
 
-                    <div class="min-w-0 flex-1 text-right">
-                        <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm font-medium leading-6 text-[#2b2620] md:text-base">{{ $item['name'] }}</a>
-                    </div>
+                    <div class="flex min-w-0 flex-col items-start gap-3 text-right md:flex-1 md:flex-row md:items-center md:justify-between md:gap-6">
+                        <div class="min-w-0">
+                            <a href="{{ route('products.show', $item['slug']) }}" class="line-clamp-2 text-sm leading-7 text-[#2b2620] md:line-clamp-1 md:text-base">{{ $item['name'] }}</a>
+                            @if(! $item['is_fixed_price'] && $item['weight_grams'])
+                            <p class="text-xs text-[#a8a096]">{{ (float) $item['weight_grams'] }} گرم</p>
+                            @endif
+                        </div>
 
-                    <span class="rounded-lg bg-[#e6f6ec] px-3 py-1.5 text-xs font-medium text-[#1a7f3c]">آماده ارسال</span>
-
-                    <div class="min-w-28 text-right md:text-left">
-                        <p class="text-sm font-bold text-[#2b2620]">{{ number_format($item['unit_price']) }} <span class="text-xs font-normal">تومان</span></p>
-                        @if($item['quantity'] > 1)
-                        <p class="text-xs text-[#a8a096]">مجموع: {{ number_format($item['total_price']) }}</p>
+                        @if($item['is_made_to_order'] ?? false)
+                        <span class="shrink-0 rounded-xl bg-[#fdeee0] px-5 py-1.5 text-sm text-[#a34d06]">ساخت سفارشی</span>
+                        @else
+                        <span class="shrink-0 rounded-xl bg-[#e6f6ec] px-5 py-1.5 text-sm text-[#1a7f3c]">آماده ارسال</span>
                         @endif
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <form method="POST" action="{{ route('cart.update', $item['product_id']) }}" class="flex items-center overflow-hidden rounded-2xl border border-[#ead69e]" data-no-loading>
+                    <div class="col-span-2 flex items-center justify-between gap-6 md:col-span-1 md:shrink-0 md:flex-row-reverse md:justify-start">
+                        <form method="POST" action="{{ route('cart.update', $item['key']) }}" class="flex h-10 w-[120px] items-center justify-between rounded-full border border-[#f0e6c8] px-3" data-no-loading>
                             @csrf @method('PATCH')
-                            <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="flex size-9 items-center justify-center text-xl text-[#c8960c]" aria-label="افزایش تعداد">+</button>
-                            <span class="flex size-9 items-center justify-center border-x border-[#f0e6c8] text-sm">{{ $item['quantity'] }}</span>
-                            <button type="submit" name="quantity" value="{{ $item['quantity'] - 1 }}" class="flex size-9 items-center justify-center text-xl text-red-400" aria-label="کاهش تعداد">−</button>
+                            <button type="submit" name="quantity" value="{{ $item['quantity'] + 1 }}" class="flex size-6 items-center justify-center text-[#b08000]" aria-label="افزایش تعداد">
+                                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                            <span class="text-sm text-[#2b2620]">{{ $item['quantity'] }}</span>
+                            <button type="submit" name="quantity" value="{{ $item['quantity'] - 1 }}" class="flex size-6 items-center justify-center text-[#d64545]" aria-label="{{ $item['quantity'] > 1 ? 'کاهش تعداد' : 'حذف از سبد خرید' }}">
+                                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M5 12h14"/></svg>
+                            </button>
                         </form>
-                        <form method="POST" action="{{ route('cart.remove', $item['product_id']) }}" data-no-loading>
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-xs text-red-400 hover:underline">حذف</button>
-                        </form>
+
+                        <span class="hidden h-10 w-px bg-[#ede6d3] md:block" aria-hidden="true"></span>
+
+                        <div class="text-left md:min-w-36 md:text-right">
+                            @if(! $item['is_fixed_price'] && $item['weight_grams'])
+                            <p class="text-[10px] text-[#a8a096] line-through">{{ number_format($item['total_price'] * 1.04) }}</p>
+                            @endif
+                            <p class="text-sm font-bold text-[#2b2620]">{{ number_format($item['total_price']) }} تومان</p>
+                        </div>
                     </div>
                 </article>
                 @endforeach
             </div>
+
+            @if($items->contains(fn ($item) => $item['is_made_to_order'] ?? false))
+            <p class="mt-6 flex items-center gap-2 text-sm text-[#6b6154] md:text-base">
+                <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#a8a096] text-xs font-bold text-white" aria-hidden="true">!</span>
+                ارسال پس از تکمیل ساخت سفارش انجام خواهد شد.
+            </p>
+            @endif
         </section>
 
         <x-invoice-summary :quote="$quote" :show-shipping="false">

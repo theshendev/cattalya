@@ -114,6 +114,22 @@ class ProfileTest extends TestCase
         $this->assertSame('09125550000', $user->fresh()->phone);
     }
 
+    public function test_phone_verification_offers_a_resend_once_the_cooldown_ends(): void
+    {
+        $user = User::factory()->create(['phone' => '09121234567']);
+        $this->actingAs($user)->post(route('profile.phone.otp'), ['phone' => '09125550000']);
+
+        $this->get(route('profile.show', ['details' => 1]))
+            ->assertOk()
+            ->assertSee('name="phone" value="09125550000"', false)
+            ->assertViewHas('phoneResendIn', fn (int $seconds) => $seconds > 0);
+
+        $this->travel(3)->minutes();
+
+        $this->get(route('profile.show', ['details' => 1]))
+            ->assertViewHas('phoneResendIn', 0);
+    }
+
     public function test_phone_change_rejects_a_number_that_belongs_to_someone_else(): void
     {
         User::factory()->create(['phone' => '09127654321']);

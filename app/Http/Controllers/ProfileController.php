@@ -20,9 +20,12 @@ class ProfileController extends Controller
 
     public function show(Request $request): View
     {
+        $pendingPhone = $request->session()->get(self::NEW_PHONE_KEY);
+
         return view('profile.show', [
             'user' => $request->user(),
-            'pendingPhone' => $request->session()->get(self::NEW_PHONE_KEY),
+            'pendingPhone' => $pendingPhone,
+            'phoneResendIn' => $pendingPhone ? $this->otp->secondsUntilResend($pendingPhone) : 0,
         ]);
     }
 

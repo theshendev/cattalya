@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OrderItem extends Model
 {
     protected $fillable = [
-        'order_id', 'product_id', 'product_name',
+        'order_id', 'product_id', 'product_variant_id', 'product_name',
         'weight_grams', 'wage_percent', 'tax_percent', 'unit_price', 'quantity', 'total_price',
     ];
 
@@ -28,6 +28,11 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
     public function subtotal(): float

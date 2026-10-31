@@ -96,6 +96,74 @@ class CheckoutFlowTest extends TestCase
         $this->assertTrue($user->addresses()->firstOrFail()->is_default, 'the remaining address is promoted to default');
     }
 
+    public function test_an_address_for_someone_else_needs_their_name_and_phone(): void
+    {
+        $user = User::factory()->create(['phone' => '09121234567']);
+
+        $this->actingAs($user)->post(route('addresses.store'), $this->addressPayload(['receiver_is_self' => '0']))
+            ->assertSessionHasErrors([
+                'receiver_name' => 'نام و نام خانوادگی گیرنده الزامی است.',
+                'phone' => 'شماره همراه گیرنده الزامی است.',
+            ]);
+
+        $this->actingAs($user)->post(route('addresses.store'), $this->addressPayload([
+            'receiver_is_self' => '0',
+            'receiver_name' => 'پروانه موسوی',
+            'phone' => '09362236405',
+        ]))->assertSessionHasNoErrors();
+
+        $address = $user->addresses()->firstOrFail();
+        $this->assertSame('پروانه موسوی', $address->receiver_name);
+        $this->assertSame('09362236405', $address->phone);
+    }
+
+    public function test_marking_yourself_as_the_receiver_replaces_the_receiver_details(): void
+    {
+        $user = User::factory()->create(['name' => 'علی', 'last_name' => 'رضایی', 'phone' => '09121234567']);
+        $address = Address::create($this->addressPayload() + ['user_id' => $user->id, 'receiver_name' => 'پروانه موسوی', 'phone' => '09362236405']);
+
+        $this->actingAs($user)->patch(route('addresses.update', $address), $this->addressPayload([
+            'receiver_is_self' => '1',
+            'receiver_name' => 'پروانه موسوی',
+            'phone' => '09362236405',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame('علی رضایی', $address->fresh()->receiver_name);
+        $this->assertSame('09121234567', $address->fresh()->phone);
+    }
+
+    public function test_cart_explains_that_made_to_order_items_ship_once_made(): void
+    {
+        $this->post(route('cart.add', $this->product));
+        $this->get(route('cart.index'))->assertDontSeeText('ارسال پس از تکمیل ساخت سفارش انجام خواهد شد.');
+
+        $this->product->update(['is_made_to_order' => true]);
+        $this->post(route('cart.add', Product::create([
+            'category_id' => $this->product->category_id,
+            'name' => 'انگشتر سفارشی',
+            'slug' => 'custom-ring',
+            'weight_grams' => 3,
+            'stock' => 0,
+            'is_made_to_order' => true,
+            'is_active' => true,
+        ])));
+
+        $this->get(route('cart.index'))->assertSeeText('ارسال پس از تکمیل ساخت سفارش انجام خواهد شد.');
+    }
+
+    public function test_payment_page_lists_switched_off_gateways_as_coming_soon(): void
+    {
+        config(['gateways.drivers.snapppay.enabled' => false]);
+        $user = User::factory()->create(['phone' => '09121234567']);
+        $user->addresses()->create($this->addressPayload() + ['receiver_name' => 'علی', 'phone' => '09121234567', 'is_default' => true]);
+        $this->post(route('cart.add', $this->product));
+
+        $this->actingAs($user)->get(route('checkout.payment'))
+            ->assertOk()
+            ->assertSeeTextInOrder([config('gateways.drivers.snapppay.label'), 'بزودی'])
+            ->assertDontSee('name="gateway" value="snapppay"', false);
+    }
+
     public function test_invalid_address_is_rejected_and_other_users_addresses_are_protected(): void
     {
         $user = User::factory()->create(['phone' => '09121234567']);

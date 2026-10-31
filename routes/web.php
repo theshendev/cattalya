@@ -40,8 +40,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/cart/summary', [CartController::class, 'drawer'])->name('cart.drawer');
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
-Route::patch('/cart/update/{productId}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('cart.remove');
+Route::patch('/cart/update/{itemKey}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{itemKey}', [CartController::class, 'remove'])->name('cart.remove');
 
 // Auth-required routes
 Route::middleware('auth')->group(function () {

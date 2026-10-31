@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\ProductResource\Pages\CreateProduct;
+use App\Models\Category;
 use App\Models\ContactMessage;
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminAndContactTest extends TestCase
@@ -46,6 +50,32 @@ class AdminAndContactTest extends TestCase
             $this->actingAs($admin)->get("/admin/{$page}")->assertOk();
             $this->actingAs($customer)->get("/admin/{$page}")->assertForbidden();
         }
+    }
+
+    public function test_admin_can_create_a_made_to_order_product_with_extra_weights(): void
+    {
+        $category = Category::create(['name' => 'گوشواره', 'slug' => 'earring', 'is_active' => true, 'sort_order' => 1]);
+        $this->actingAs(User::factory()->create(['phone' => '09121234567', 'is_admin' => true]));
+
+        Livewire::test(CreateProduct::class)
+            ->fillForm([
+                'name' => 'گوشواره حلقه‌ای',
+                'slug' => 'hoop-earring',
+                'category_id' => $category->id,
+                'weight_grams' => 2.51,
+                'stock' => 0,
+                'is_made_to_order' => true,
+                'variants' => [
+                    ['weight_grams' => 3.51, 'stock' => 2],
+                    ['weight_grams' => 5.51, 'stock' => 0],
+                ],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $product = Product::where('slug', 'hoop-earring')->firstOrFail();
+        $this->assertTrue($product->is_made_to_order);
+        $this->assertSame(['3.510', '5.510'], $product->variants->pluck('weight_grams')->all());
     }
 
     public function test_admin_can_view_an_order_with_its_address_snapshot(): void
