@@ -12,11 +12,13 @@ class ManageSettings extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
+    protected static ?string $navigationGroup = 'تنظیمات';
+
     protected static ?string $navigationLabel = 'تنظیمات سایت';
 
     protected static ?string $title = 'تنظیمات سایت';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.manage-settings';
 
@@ -45,30 +47,30 @@ class ManageSettings extends Page
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('اطلاعات سایت')->schema([
+                Forms\Components\Section::make('اطلاعات سایت')->description('نام و متن‌های عمومی سایت')->icon('heroicon-o-globe-alt')->schema([
                     Forms\Components\TextInput::make('site_name')->label('نام سایت (فارسی)')->required(),
                     Forms\Components\TextInput::make('site_name_en')->label('نام سایت (انگلیسی)')->required(),
                     Forms\Components\Textarea::make('site_description')->label('درباره ما')->rows(3)->columnSpanFull(),
                     Forms\Components\Textarea::make('footer_copyright')->label('متن کپی‌رایت')->rows(2)->columnSpanFull(),
                 ])->columns(2),
 
-                Forms\Components\Section::make('راه‌های ارتباطی')->schema([
-                    Forms\Components\TextInput::make('contact_phone')->label('تلفن تماس'),
-                    Forms\Components\TextInput::make('contact_email')->label('ایمیل'),
-                    Forms\Components\TextInput::make('instagram_url')->label('لینک اینستاگرام')->url(),
-                    Forms\Components\TextInput::make('whatsapp_number')->label('شماره واتساپ'),
+                Forms\Components\Section::make('راه‌های ارتباطی')->description('در صفحه تماس و پایین سایت نمایش داده می‌شود')->icon('heroicon-o-phone')->schema([
+                    Forms\Components\TextInput::make('contact_phone')->label('تلفن تماس')->prefixIcon('heroicon-o-phone')->extraInputAttributes(['dir' => 'ltr']),
+                    Forms\Components\TextInput::make('contact_email')->label('ایمیل')->prefixIcon('heroicon-o-envelope')->email()->extraInputAttributes(['dir' => 'ltr']),
+                    Forms\Components\TextInput::make('instagram_url')->label('لینک اینستاگرام')->prefixIcon('heroicon-o-link')->url()->extraInputAttributes(['dir' => 'ltr']),
+                    Forms\Components\TextInput::make('whatsapp_number')->label('شماره واتساپ')->prefixIcon('heroicon-o-chat-bubble-left')->extraInputAttributes(['dir' => 'ltr']),
                 ])->columns(2),
 
-                Forms\Components\Section::make('تنظیمات فروشگاه')->schema([
+                Forms\Components\Section::make('تنظیمات فروشگاه')->description('هزینه‌ها و شرایط ارسال')->icon('heroicon-o-building-storefront')->schema([
                     Forms\Components\TextInput::make('free_shipping_threshold')
-                        ->label('حد ارسال رایگان (تومن)')
+                        ->label('حد ارسال رایگان')->suffix('تومن')
                         ->numeric(),
                     Forms\Components\TextInput::make('shipping_cost')
-                        ->label('هزینه ارسال (تومن)')
+                        ->label('هزینه ارسال')->suffix('تومن')
                         ->numeric()
                         ->default(0),
                     Forms\Components\TextInput::make('gift_packaging_cost')
-                        ->label('هزینه بسته‌بندی هدیه (تومن)')
+                        ->label('هزینه بسته‌بندی هدیه')->suffix('تومن')
                         ->numeric()
                         ->default(0),
                 ])->columns(3),

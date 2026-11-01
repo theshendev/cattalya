@@ -16,25 +16,31 @@ class AnnouncementResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
+    protected static ?string $navigationGroup = 'محتوای سایت';
+
     protected static ?string $navigationLabel = 'اعلانات';
 
     protected static ?string $modelLabel = 'اعلان';
 
     protected static ?string $pluralModelLabel = 'اعلانات';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Textarea::make('text')
-                ->label('متن اعلان')
-                ->required()
-                ->rows(2)
-                ->columnSpanFull(),
-            Forms\Components\Toggle::make('is_active')
-                ->label('فعال')
-                ->default(true),
+            Forms\Components\Section::make('متن اعلان')
+                ->description('این متن در نوار بالای سایت نمایش داده می‌شود.')
+                ->icon('heroicon-o-megaphone')
+                ->schema([
+                    Forms\Components\Textarea::make('text')
+                        ->hiddenLabel()
+                        ->required()
+                        ->rows(3),
+                    Forms\Components\Toggle::make('is_active')
+                        ->label('نمایش در سایت')
+                        ->default(true),
+                ]),
         ]);
     }
 
@@ -42,14 +48,17 @@ class AnnouncementResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('text')->label('متن')->limit(80)->searchable(),
-                Tables\Columns\IconColumn::make('is_active')->label('فعال')->boolean(),
-                Tables\Columns\TextColumn::make('updated_at')->label('آخرین ویرایش')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('text')->label('متن')->weight('bold')->limit(80)->searchable(),
+                Tables\Columns\ToggleColumn::make('is_active')->label('فعال'),
+                Tables\Columns\TextColumn::make('updated_at')->label('آخرین ویرایش')->since()->sortable(),
             ])
+            ->striped()
             ->actions([
                 Tables\Actions\EditAction::make()->label('ویرایش'),
                 Tables\Actions\DeleteAction::make()->label('حذف'),
-            ]);
+            ])
+            ->emptyStateHeading('هنوز اعلانی ثبت نشده')
+            ->emptyStateIcon('heroicon-o-megaphone');
     }
 
     public static function getPages(): array
