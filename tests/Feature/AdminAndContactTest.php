@@ -55,6 +55,15 @@ class AdminAndContactTest extends TestCase
         }
     }
 
+    public function test_admin_panel_is_rendered_in_persian_right_to_left(): void
+    {
+        $this->actingAs(User::factory()->create(['phone' => '09121234567', 'is_admin' => true]))
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('lang="fa"', false)
+            ->assertSee('dir="rtl"', false);
+    }
+
     public function test_admin_dashboard_renders_with_orders_and_navigation_badges(): void
     {
         $customer = User::factory()->create(['phone' => '09127654321']);

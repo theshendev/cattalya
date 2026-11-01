@@ -15,6 +15,7 @@ use App\Filament\Widgets\GoldPriceWidget;
 use App\Filament\Widgets\LatestOrdersWidget;
 use App\Filament\Widgets\SalesChartWidget;
 use App\Filament\Widgets\StatsOverviewWidget;
+use App\Http\Middleware\SetAdminLocale;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -85,6 +86,7 @@ class AdminPanelProvider extends PanelProvider
                 LatestOrdersWidget::class,
             ])
             ->middleware([
+                SetAdminLocale::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
