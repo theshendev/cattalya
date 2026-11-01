@@ -17,13 +17,15 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
+    protected static ?string $navigationGroup = 'فروشگاه';
+
     protected static ?string $navigationLabel = 'دسته‌بندی‌ها';
 
     protected static ?string $modelLabel = 'دسته‌بندی';
 
     protected static ?string $pluralModelLabel = 'دسته‌بندی‌ها';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

@@ -16,13 +16,27 @@ class ContactMessageResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-envelope';
 
+    protected static ?string $navigationGroup = 'ارتباطات';
+
     protected static ?string $navigationLabel = 'پیام‌های تماس';
 
     protected static ?string $modelLabel = 'پیام';
 
     protected static ?string $pluralModelLabel = 'پیام‌های تماس';
 
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $unreadCount = ContactMessage::whereNull('read_at')->count();
+
+        return $unreadCount > 0 ? (string) $unreadCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
 
     public static function form(Form $form): Form
     {

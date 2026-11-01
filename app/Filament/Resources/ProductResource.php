@@ -18,13 +18,15 @@ class ProductResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
+    protected static ?string $navigationGroup = 'فروشگاه';
+
     protected static ?string $navigationLabel = 'محصولات';
 
     protected static ?string $modelLabel = 'محصول';
 
     protected static ?string $pluralModelLabel = 'محصولات';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

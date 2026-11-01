@@ -16,13 +16,15 @@ class GoldPriceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
+    protected static ?string $navigationGroup = 'فروشگاه';
+
     protected static ?string $navigationLabel = 'قیمت طلا';
 
     protected static ?string $modelLabel = 'قیمت طلا';
 
     protected static ?string $pluralModelLabel = 'تاریخچه قیمت طلا';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {

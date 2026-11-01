@@ -12,11 +12,13 @@ class ManageSettings extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
+    protected static ?string $navigationGroup = 'تنظیمات';
+
     protected static ?string $navigationLabel = 'تنظیمات سایت';
 
     protected static ?string $title = 'تنظیمات سایت';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.manage-settings';
 

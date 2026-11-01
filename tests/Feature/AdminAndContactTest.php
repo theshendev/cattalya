@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Widgets\LatestOrdersWidget;
+use App\Filament\Widgets\SalesChartWidget;
 use App\Models\ContactMessage;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminAndContactTest extends TestCase
@@ -46,6 +49,22 @@ class AdminAndContactTest extends TestCase
             $this->actingAs($admin)->get("/admin/{$page}")->assertOk();
             $this->actingAs($customer)->get("/admin/{$page}")->assertForbidden();
         }
+    }
+
+    public function test_admin_dashboard_renders_with_orders_and_navigation_badges(): void
+    {
+        $customer = User::factory()->create(['phone' => '09127654321']);
+        Order::create(['user_id' => $customer->id, 'status' => 'pending', 'total_amount' => 500_000]);
+        Order::create(['user_id' => $customer->id, 'status' => 'paid', 'total_amount' => 750_000]);
+
+        $this->actingAs(User::factory()->create(['phone' => '09121234567', 'is_admin' => true]))
+            ->get('/admin')
+            ->assertOk()
+            ->assertSeeText('فروشگاه')
+            ->assertSee('--cat-gold', false);
+
+        Livewire::test(LatestOrdersWidget::class)->assertCanSeeTableRecords(Order::all());
+        Livewire::test(SalesChartWidget::class)->assertOk();
     }
 
     public function test_admin_can_view_an_order_with_its_address_snapshot(): void

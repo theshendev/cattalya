@@ -18,13 +18,27 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
 
+    protected static ?string $navigationGroup = 'فروشگاه';
+
     protected static ?string $navigationLabel = 'سفارش‌ها';
 
     protected static ?string $modelLabel = 'سفارش';
 
     protected static ?string $pluralModelLabel = 'سفارش‌ها';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
+
+    public static function getNavigationBadge(): ?string
+    {
+        $pendingCount = Order::where('status', 'pending')->count();
+
+        return $pendingCount > 0 ? (string) $pendingCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
 
     public static function form(Form $form): Form
     {

@@ -16,13 +16,15 @@ class BannerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
+    protected static ?string $navigationGroup = 'محتوای سایت';
+
     protected static ?string $navigationLabel = 'بنرها';
 
     protected static ?string $modelLabel = 'بنر';
 
     protected static ?string $pluralModelLabel = 'بنرها';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

@@ -16,13 +16,15 @@ class CouponResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-ticket';
 
+    protected static ?string $navigationGroup = 'بازاریابی';
+
     protected static ?string $navigationLabel = 'کدهای تخفیف';
 
     protected static ?string $modelLabel = 'کد تخفیف';
 
     protected static ?string $pluralModelLabel = 'کدهای تخفیف';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

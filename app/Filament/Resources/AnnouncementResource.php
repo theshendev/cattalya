@@ -16,13 +16,15 @@ class AnnouncementResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
+    protected static ?string $navigationGroup = 'محتوای سایت';
+
     protected static ?string $navigationLabel = 'اعلانات';
 
     protected static ?string $modelLabel = 'اعلان';
 
     protected static ?string $pluralModelLabel = 'اعلانات';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
